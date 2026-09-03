@@ -1,6 +1,6 @@
 {
-    "version":  "1.1.0",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.1.0/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "bcf008b0e93e973c74f30e66f87b59727a6c73adb4a5fb9dae9f6457dd212e15",
-    "notes":  "Neue Boxengassen-Hauptseite | vier gro├ƒe Reifen-Karten VL VR HL HR | Kalt Hei├ƒ Ziel und n├ñchster Kaltdruck direkt sichtbar | Ampelbewertung direkt nach Messung | Auswahl Rennwochenende Session Fahrer Fahrzeug Reifensatz kompakter"
+    "version":  "1.1.1",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.1.1/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "f139c42755709e5d552c2f9b1c4fc322cd67fe51a68c0f07865332ba7467f297",
+    "notes":  "UTF-8/Umlaut-Fix | ├ä ├û ├£ ├ñ ├Â ├╝ ├ƒ sauber in Eingaben und Anzeige | sichtbare deutsche Texte bereinigt | UTF-8 Selbsttest beim Build"
 }
