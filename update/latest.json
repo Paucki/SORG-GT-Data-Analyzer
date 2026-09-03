@@ -1,6 +1,6 @@
 {
-    "version":  "1.0.10",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.0.10/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "54cc806b05b1a8d6f7253bd8a72ee2ffbcf24ccbe86fe782da2b15b8ffdd5065",
-    "notes":  "Automatisches Datenbank-Backup vor jedem Update | Installationsschritte direkt im Motorsport-Updatefenster | App wird nach dem Update automatisch neu gestartet | Verbesserte Update-Anzeige"
+    "version":  "1.0.11",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.0.11/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "4ffdd613cb943ea3d30adff8cc4ae73d81e25ad44ea09014e59370d7d1b9e959",
+    "notes":  "Fix: verifiziertes Datenbank-Backup vor jedem Update | Update wird abgebrochen wenn Backup fehlschl├ñgt | automatischer Neustart nach vollst├ñndig unsichtbarer Installation"
 }
