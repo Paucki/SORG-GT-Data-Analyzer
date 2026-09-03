@@ -1,6 +1,6 @@
 {
-    "version":  "1.1.1",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.1.1/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "f139c42755709e5d552c2f9b1c4fc322cd67fe51a68c0f07865332ba7467f297",
-    "notes":  "UTF-8/Umlaut-Fix | ├ä ├û ├£ ├ñ ├Â ├╝ ├ƒ sauber in Eingaben und Anzeige | sichtbare deutsche Texte bereinigt | UTF-8 Selbsttest beim Build"
+    "version":  "1.2.0",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.2.0/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "bea8835a3209497a212489f0e015b1c0d232f1c93e205e2100863c807b2c0d91",
+    "notes":  "Neues Rollen-Overlay-System | REIFEN FAHRER CAR CHIEF MECHANIK DATA | Fahrerfeedback direkt nach dem Stint | Car Chief sieht Feedback und verteilt Aufgaben | Mechaniker haken Arbeiten ab | gemeinsame Session-Datenbank"
 }
