@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SORG GT Data Analyzer</title>
+  <meta name="description" content="SORG GT Data Analyzer – Windows Software für Rennwochenenden, Reifendruck und GT-Datenanalyse.">
+  <style>
+    :root{
+      --bg:#08090b;
+      --panel:#111317;
+      --panel2:#171a20;
+      --text:#f5f5f5;
+      --muted:#aeb4bf;
+      --red:#e21b2d;
+      --line:#2b2f37;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#060709 0%,#0b0d10 100%);
+      color:var(--text);
+      font-family:Segoe UI,Arial,sans-serif;
+      line-height:1.55;
+    }
+    .wrap{max-width:1120px;margin:auto;padding:0 24px}
+    header{
+      border-bottom:1px solid var(--line);
+      background:rgba(8,9,11,.92);
+      position:sticky;top:0;z-index:5;
+      backdrop-filter:blur(8px);
+    }
+    .nav{display:flex;align-items:center;justify-content:space-between;height:72px}
+    .brand{font-weight:800;letter-spacing:.08em}
+    .brand span{color:var(--red)}
+    .nav a{color:var(--muted);text-decoration:none;margin-left:22px}
+    .nav a:hover{color:white}
+    .hero{
+      padding:96px 0 78px;
+      border-bottom:1px solid var(--line);
+      background:
+        radial-gradient(circle at 75% 20%,rgba(226,27,45,.16),transparent 34%),
+        linear-gradient(180deg,rgba(255,255,255,.015),transparent);
+    }
+    .eyebrow{color:var(--red);font-weight:800;letter-spacing:.18em;font-size:.82rem}
+    h1{font-size:clamp(2.8rem,7vw,5.8rem);line-height:.95;margin:14px 0 24px;max-width:900px}
+    .lead{max-width:710px;color:#c8cdd5;font-size:1.16rem}
+    .buttons{display:flex;gap:14px;flex-wrap:wrap;margin-top:34px}
+    .btn{
+      display:inline-block;padding:15px 22px;border-radius:8px;
+      text-decoration:none;font-weight:800;border:1px solid var(--line);
+    }
+    .primary{background:var(--red);color:white;border-color:var(--red)}
+    .secondary{background:#15181d;color:white}
+    .small{color:var(--muted);margin-top:14px;font-size:.93rem}
+    section{padding:70px 0}
+    h2{font-size:2rem;margin:0 0 12px}
+    .sub{color:var(--muted);max-width:720px;margin-bottom:32px}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .card{
+      padding:26px;background:linear-gradient(180deg,var(--panel2),var(--panel));
+      border:1px solid var(--line);border-radius:12px;
+    }
+    .card h3{margin:0 0 10px}
+    .card p{margin:0;color:var(--muted)}
+    .download{
+      background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:34px;
+      display:flex;align-items:center;justify-content:space-between;gap:28px;
+    }
+    footer{border-top:1px solid var(--line);padding:32px 0;color:#8f96a3;font-size:.9rem}
+    @media(max-width:800px){
+      .grid{grid-template-columns:1fr}
+      .download{display:block}
+      .download .buttons{margin-top:22px}
+      .nav .links{display:none}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <div class="brand">SORG <span>GT</span> DATA ANALYZER</div>
+    <div class="links">
+      <a href="#funktionen">Funktionen</a>
+      <a href="#download">Download</a>
+      <a href="https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/latest">Versionen</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <div class="eyebrow">WINDOWS · MOTORSPORT DATA SOFTWARE</div>
+      <h1>GT-DATEN.<br>KLAR AUSGEWERTET.</h1>
+      <p class="lead">
+        SORG GT Data Analyzer bündelt Rennwochenenden, Fahrzeuge, Fahrer,
+        Reifendruckdaten und Auswertungen in einer Windows-Anwendung.
+      </p>
+      <div class="buttons">
+        <a class="btn primary" href="https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/latest/download/SORG_GT_Data_Analyzer_Setup_1.0.5.exe">
+          Aktuelle Version herunterladen
+        </a>
+        <a class="btn secondary" href="https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/latest">
+          Release ansehen
+        </a>
+      </div>
+      <div class="small">Windows 10/11 · Installer mit Desktop-Verknüpfung · automatische Updates integriert</div>
+    </div>
+  </div>
+
+  <section id="funktionen">
+    <div class="wrap">
+      <h2>Für den Einsatz am Rennwochenende</h2>
+      <p class="sub">Die Anwendung ist für eine schnelle, zentrale Erfassung und spätere Analyse von GT-Daten aufgebaut.</p>
+      <div class="grid">
+        <div class="card">
+          <h3>Rennwochenenden</h3>
+          <p>Events, Sessions, Fahrer, Fahrzeuge und Strecken strukturiert verwalten.</p>
+        </div>
+        <div class="card">
+          <h3>Reifendruck</h3>
+          <p>Messwerte und Zielwerte dokumentieren und für weitere Auswertungen speichern.</p>
+        </div>
+        <div class="card">
+          <h3>Automatische Updates</h3>
+          <p>Neue Versionen werden direkt aus der Anwendung erkannt und installiert.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="wrap">
+      <div class="download">
+        <div>
+          <div class="eyebrow">DOWNLOAD</div>
+          <h2>SORG GT Data Analyzer</h2>
+          <p class="sub" style="margin:0">
+            Setup herunterladen, installieren und über die Desktop-Verknüpfung starten.
+            Python oder zusätzliche Entwicklerprogramme werden nicht benötigt.
+          </p>
+        </div>
+        <div class="buttons">
+          <a class="btn primary" href="https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/latest/download/SORG_GT_Data_Analyzer_Setup_1.0.5.exe">
+            Setup herunterladen
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    SORG GT Data Analyzer · Windows Software · Releases über GitHub
+  </div>
+</footer>
+</body>
+</html>
