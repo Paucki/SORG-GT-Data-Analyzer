@@ -1,6 +1,6 @@
 {
-    "version":  "1.3.0",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.3.0/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "e0926c980a28bd08761c40620ea5740efaa23b33eeba000f7141bc4dccb594ea",
-    "notes":  "Benutzerkonten mit Rollen und Fahrzeugzuordnung | Car Chief sieht nur seine zugewiesenen Fahrzeuge im Fokus | Live Track Grundansicht f├╝r sp├ñtere GPSauge Integration | Rollen springen automatisch in ihren Arbeitsbereich"
+    "version":  "1.3.1",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.3.1/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "2ef759ae72f71404d95cde3557715029f00628006689418e2f97f31db53e2fcf",
+    "notes":  "Benutzerverwaltung unter Einstellungen | Racing-App-artige Live-Track-Karte | Fokusfahrzeuge, Fahrzeugliste, Geschwindigkeit, Status und Streckenmeldungen | vorbereitet f├╝r echte GPSauge/GPSoverIP Daten"
 }
