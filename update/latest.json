@@ -1,6 +1,6 @@
 {
-    "version":  "1.5.2",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.5.2/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "4a8cc6ec5e313c571bc2f7d51eeee9c4746e3bf31ffb6c4aaf66f11bb579f133",
-    "notes":  "Admin-Passwort kann direkt im Login eingerichtet oder zur├╝ckgesetzt werden | Fix f├╝r bestehende Datenbanken mit altem Admin-Konto"
+    "version":  "1.5.3",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.5.3/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "6ca3da987360e18f9776b52f590648b2179a12349e131d8f96710198434213f3",
+    "notes":  "Fix updated_at | Admin vergibt Datenzugriff und Benutzerlisten-Zugriff | Benutzerliste Nur-Lese"
 }
