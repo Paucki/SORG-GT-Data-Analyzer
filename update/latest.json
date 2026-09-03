@@ -1,6 +1,6 @@
 {
-    "version":  "1.4.4",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.4.4/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "157a10de363d08bfe473b5b96b4426060e2d79e437459b77119e688ab42d512f",
-    "notes":  "Stammdaten vereinfacht | Fahrzeuge mit Startnummer | Fahrer nur Vorname/Nachname/Notizen | Strecken ohne L├ñnge und Koordinaten in der Oberfl├ñche"
+    "version":  "1.5.0",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.5.0/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "16dfd7a448a71d7893c479fc84cf54ed18f1b1147dd64e011138c5081db5e1c6",
+    "notes":  "Login beim App-Start | Benutzername und Passwort | Admin legt Benutzer, Rollen und Fahrzeuge an | Startpasswort muss beim ersten Login ge├ñndert werden | eigenes Passwort in Einstellungen ├ñnderbar | Onboard-Reiter entfernt"
 }
