@@ -1,6 +1,6 @@
 {
-    "version":  "1.5.0",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.5.0/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "16dfd7a448a71d7893c479fc84cf54ed18f1b1147dd64e011138c5081db5e1c6",
-    "notes":  "Login beim App-Start | Benutzername und Passwort | Admin legt Benutzer, Rollen und Fahrzeuge an | Startpasswort muss beim ersten Login ge├ñndert werden | eigenes Passwort in Einstellungen ├ñnderbar | Onboard-Reiter entfernt"
+    "version":  "1.5.1",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.5.1/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "3148a8f08c964913feaa2be078eb8a398ec73058ac40ae38c121fee5cc92ca76",
+    "notes":  "Fix f├╝r Admin-Ersteinrichtung bei bereits vorhandenem Benutzernamen | bestehendes Konto wird ├╝bernommen statt doppelt angelegt"
 }
