@@ -1,6 +1,6 @@
 {
-    "version":  "1.0.7",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.0.7/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "6e37f617673cb4026fcf7d156133ac6f5581086d530b899c298bcdd501e3d303",
-    "notes":  "Neues Motorsport-Updatefenster mit Bild, Prozentanzeige und Fortschrittsbalken. Eigenes SORG-Symbol in der Windows-Taskleiste."
+    "version":  "1.0.8",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.0.8/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "0812e71393612f55c90b4494855e4442d9b2cefd001f8c96c12b6cffe68fe0cf",
+    "notes":  "Fix: eigenes Motorsport-Updatefenster und korrektes SORG-Symbol in der Windows-Taskleiste."
 }
