@@ -1,6 +1,6 @@
 {
-    "version":  "1.3.1",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.3.1/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "2ef759ae72f71404d95cde3557715029f00628006689418e2f97f31db53e2fcf",
-    "notes":  "Benutzerverwaltung unter Einstellungen | Racing-App-artige Live-Track-Karte | Fokusfahrzeuge, Fahrzeugliste, Geschwindigkeit, Status und Streckenmeldungen | vorbereitet f├╝r echte GPSauge/GPSoverIP Daten"
+    "version":  "1.3.2",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.3.2/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "0a6320ea80ada17cc1f19e0bb9b2bbdc7f7315874c75893fa9eb5083e4c7fe68",
+    "notes":  "Startfehler behoben | Benutzerverwaltung korrekt unter Einstellungen \u0026 System | Live-Track-Funktionen aus V1.3.1 bleiben erhalten"
 }
