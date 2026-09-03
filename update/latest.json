@@ -1,6 +1,6 @@
 {
-    "version":  "1.0.11",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.0.11/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "4ffdd613cb943ea3d30adff8cc4ae73d81e25ad44ea09014e59370d7d1b9e959",
-    "notes":  "Fix: verifiziertes Datenbank-Backup vor jedem Update | Update wird abgebrochen wenn Backup fehlschl├ñgt | automatischer Neustart nach vollst├ñndig unsichtbarer Installation"
+    "version":  "1.0.12",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.0.12/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "d9d1ebcaca174cbd6453204f8cc9233c2a0105398fb8f4db25f9237cbfc105e9",
+    "notes":  "Fix automatischer Neustart nach Update | echter Wait auf den fertig installierten elevated Installer | Backup wird weiterhin vor Installation verifiziert | last_backup.txt zur direkten Backup-Kontrolle"
 }
