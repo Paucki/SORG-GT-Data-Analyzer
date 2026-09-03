@@ -1,6 +1,6 @@
 {
-    "version":  "1.4.0",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.4.0/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "f91bf8cddc85fcca8aafd66d05a4a4b0f05aa9e68997292fce5f8df15a4e4f68",
-    "notes":  "Car Chief: Runden \u0026 Performance | manuelle Rundenzeiten pro Fahrzeug | Bestzeit, Durchschnitt, Delta und Trend | Verkehr/Gelb/Code60/Boxenrunden aus Trend ausschlie├ƒbar | Live Track aus Oberfl├ñche entfernt"
+    "version":  "1.4.1",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.4.1/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "efdf7a43fb891352b22adbfe08f667761537495fb3e831d4835fd6afb28018cb",
+    "notes":  "Vertikales Scrollen auf allen Haupt- und Rollen-Seiten | Car-Chief-Aufgaben unten jetzt erreichbar | Einstellungen und Expertenbereiche ebenfalls scrollbar"
 }
