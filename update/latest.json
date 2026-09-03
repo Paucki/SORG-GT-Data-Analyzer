@@ -1,6 +1,6 @@
 {
-    "version":  "1.0.5",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.0.5/SORG_GT_Data_Analyzer_Setup_1.0.5.exe",
-    "sha256":  "4b11ffbd4f07d01fe2e9b8c0608d8db59b2d3e8cf059f13839663447691d61ba",
-    "notes":  "Internet Auto-Update Test V1.0.4 auf V1.0.5"
+    "version":  "1.0.6",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.0.6/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "53616c13e79bbe1f6c1a35fc9c1fff150b82efe6592a55cce3cbf28bd3e16588",
+    "notes":  "SORG GT Data Analyzer V1.0.6"
 }
