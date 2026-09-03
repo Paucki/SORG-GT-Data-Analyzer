@@ -1,6 +1,6 @@
 {
-    "version":  "1.0.14",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.0.14/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "644a635a1231f88151a56d1ef32a7b25f244b0d4a34b4876408074e6e24d3221",
-    "notes":  "Startfehler V1.0.13 behoben | System \u0026 Updates Dialog startet korrekt | manueller Update-Button korrigiert | Backup- und Auto-Restart-System aus V1.0.12 bleiben erhalten"
+    "version":  "1.0.15",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.0.15/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "f74c3a2751d05ab68e7ed2d25636e1d166c3585b7afc1ac0a14f8c880fcd47ee",
+    "notes":  "System \u0026 Updates jetzt sichtbar in der Seitenleiste | installierte Version anzeigen | letztes Backup anzeigen | Backup jetzt erstellen | Backup-Ordner ├Âffnen | manuelle Update-Pr├╝fung"
 }
