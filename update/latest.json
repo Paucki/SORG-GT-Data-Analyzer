@@ -1,6 +1,6 @@
 {
-    "version":  "1.4.1",
-    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.4.1/SORG_GT_Data_Analyzer_Setup.exe",
-    "sha256":  "efdf7a43fb891352b22adbfe08f667761537495fb3e831d4835fd6afb28018cb",
-    "notes":  "Vertikales Scrollen auf allen Haupt- und Rollen-Seiten | Car-Chief-Aufgaben unten jetzt erreichbar | Einstellungen und Expertenbereiche ebenfalls scrollbar"
+    "version":  "1.4.2",
+    "url":  "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.4.2/SORG_GT_Data_Analyzer_Setup.exe",
+    "sha256":  "b05b9cd7cceee34e893bbca0c8ecc215142d17d851debcc2a86d79426f3277da",
+    "notes":  "Rechte strikt nach Benutzerrolle | Car Chief sieht nur Car-Chief-Arbeitsbereich | Car Chief jetzt mit Reitern Aufgaben, Rundenzeiten und Onboard | lokale Onboard-Videowiedergabe integriert"
 }
