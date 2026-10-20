@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SORG GT Mobile">
+  <title>SORG GT Mobile</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <div class="brand">SORG <span>GT</span></div>
+        <div class="subtitle">MOBILE</div>
+      </div>
+      <div id="syncBadge" class="badge">LOKAL</div>
+    </header>
+
+    <main>
+      <section class="view active" data-view="dashboard">
+        <div class="hero card">
+          <div class="eyebrow">RENNWOCHENENDE</div>
+          <h1>SORG GT Mobile</h1>
+          <p>Schnelle Erfassung direkt an der Boxenmauer oder am Fahrzeug.</p>
+          <button class="primary" data-go="pressure">Reifendruck erfassen</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat card"><b id="statEntries">0</b><span>Messungen</span></div>
+          <div class="stat card"><b id="statCars">0</b><span>Fahrzeuge</span></div>
+          <div class="stat card"><b id="statDrivers">0</b><span>Fahrer</span></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Letzte Messungen</div>
+          <div id="recentList" class="list empty">Noch keine Messungen vorhanden.</div>
+        </div>
+      </section>
+
+      <section class="view" data-view="pressure">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">ERFASSUNG</div>
+            <h2>Reifendruck</h2>
+          </div>
+        </div>
+        <form id="pressureForm" class="card form-grid">
+          <label>Fahrzeug
+            <input id="car" placeholder="z. B. #77 BMW M4 GT4" required>
+          </label>
+          <label>Fahrer
+            <input id="driver" placeholder="Name" required>
+          </label>
+          <label>Session
+            <select id="session">
+              <option>Training</option><option>Qualifying</option><option>Rennen</option><option>Test</option>
+            </select>
+          </label>
+          <label>Reifensatz
+            <input id="setName" placeholder="z. B. Slick 2">
+          </label>
+          <div class="pressure-grid">
+            <label>VL <input id="fl" inputmode="decimal" type="number" step="0.01" min="0" required></label>
+            <label>VR <input id="fr" inputmode="decimal" type="number" step="0.01" min="0" required></label>
+            <label>HL <input id="rl" inputmode="decimal" type="number" step="0.01" min="0" required></label>
+            <label>HR <input id="rr" inputmode="decimal" type="number" step="0.01" min="0" required></label>
+          </div>
+          <label>Notiz
+            <textarea id="note" rows="3" placeholder="Temperatur, Zustand, Besonderheiten …"></textarea>
+          </label>
+          <button class="primary" type="submit">Messung speichern</button>
+        </form>
+      </section>
+
+      <section class="view" data-view="data">
+        <div class="section-head">
+          <div><div class="eyebrow">DATEN</div><h2>Messungen</h2></div>
+          <button id="exportBtn" class="ghost">Export</button>
+        </div>
+        <div id="allList" class="list empty card">Noch keine Messungen vorhanden.</div>
+      </section>
+
+      <section class="view" data-view="team">
+        <div class="section-head"><div><div class="eyebrow">TEAM</div><h2>Stammdaten</h2></div></div>
+        <div class="card">
+          <label>Fahrzeug hinzufügen
+            <div class="row"><input id="newCar" placeholder="#77 BMW M4 GT4"><button id="addCar" class="smallbtn">+</button></div>
+          </label>
+          <div id="carList" class="chips"></div>
+        </div>
+        <div class="card">
+          <label>Fahrer hinzufügen
+            <div class="row"><input id="newDriver" placeholder="Name"><button id="addDriver" class="smallbtn">+</button></div>
+          </label>
+          <div id="driverList" class="chips"></div>
+        </div>
+      </section>
+
+      <section class="view" data-view="settings">
+        <div class="section-head"><div><div class="eyebrow">SYSTEM</div><h2>Einstellungen</h2></div></div>
+        <div class="card">
+          <div class="section-title">Installation</div>
+          <p class="muted">Am iPhone in Safari: Teilen → „Zum Home-Bildschirm“. Unter Android im Browser: „App installieren“.</p>
+          <button id="installBtn" class="primary hidden">App installieren</button>
+        </div>
+        <div class="card">
+          <div class="section-title">Daten</div>
+          <p class="muted">Diese erste Version speichert Daten lokal auf diesem Gerät. Cloud-Synchronisierung zwischen Windows, iPhone und Android kommt im nächsten Schritt.</p>
+          <button id="clearBtn" class="danger">Lokale Daten löschen</button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottomnav">
+      <button class="active" data-tab="dashboard">⌂<span>Home</span></button>
+      <button data-tab="pressure">◉<span>Druck</span></button>
+      <button data-tab="data">≡<span>Daten</span></button>
+      <button data-tab="team">♟<span>Team</span></button>
+      <button data-tab="settings">⚙<span>Mehr</span></button>
+    </nav>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
