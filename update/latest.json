@@ -1,6 +1,6 @@
 {
-  "version": "1.6.1",
-  "url": "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.6.1/SORG_GT_Data_Analyzer_Setup.exe",
-  "sha256": "7599e3f1c9f813f7b833576ba0a61b753e135965d2159ec7859a3528b69b474f",
-  "notes": "Login beim Start | Expertenmodus wiederhergestellt | Felgentemperatur ergänzt | Reifenverwaltung erweitert | Taskleisten-Icon korrigiert"
+  "version": "1.6.2",
+  "url": "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.6.2/SORG_GT_Data_Analyzer_Setup.exe",
+  "sha256": "483563c2e8860f25f19980bb4c1ce39e038a443135957f116ff1eff864704806",
+  "notes": "Update-Suche im Menü wiederhergestellt | automatischer Update-Check beim Start | GitHub Auto-Build eingerichtet"
 }
