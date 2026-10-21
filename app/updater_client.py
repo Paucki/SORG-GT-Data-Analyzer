@@ -47,6 +47,7 @@ class UserSession:
     role: str = "user"
     channel: str = "stable"
     token: str = ""
+    refresh_token: str = ""
     user_id: str = ""
     team_id: str = ""
 
@@ -200,7 +201,7 @@ class LoginDialog(QDialog):
         self.password.returnPressed.connect(self.try_login)
         card_layout.addWidget(self.password)
 
-        self.remember_user = QCheckBox("Benutzername auf diesem PC merken")
+        self.remember_user = QCheckBox("Angemeldet bleiben")
         card_layout.addWidget(self.remember_user)
 
         self.status = QLabel("")
@@ -242,7 +243,8 @@ class LoginDialog(QDialog):
             remembered = (self.update_client.data_folder / "remembered_user.txt")
             if remembered.exists():
                 self.username.setText(remembered.read_text(encoding="utf-8").strip())
-                self.remember_user.setChecked(bool(self.username.text()))
+            self.remember_user.setChecked(self.update_client.saved_session_path.exists())
+            if self.username.text():
                 self.password.setFocus()
             else:
                 self.username.setFocus()
@@ -369,6 +371,7 @@ class LoginDialog(QDialog):
             raise RuntimeError(message) from error
 
         token = data.get("access_token", "")
+        refresh_token = data.get("refresh_token", "")
         user = data.get("user") or {}
         user_id = user.get("id", "")
         display_name = data.get("display_name") or username
@@ -393,6 +396,7 @@ class LoginDialog(QDialog):
             role=role,
             channel="stable",
             token=token,
+            refresh_token=refresh_token,
             user_id=user_id,
             team_id=team_id,
         )
@@ -478,8 +482,11 @@ class LoginDialog(QDialog):
             remember_path = self.update_client.data_folder / "remembered_user.txt"
             if self.remember_user.isChecked():
                 remember_path.write_text(username, encoding="utf-8")
-            elif remember_path.exists():
-                remember_path.unlink()
+                self.update_client.save_session(session)
+            else:
+                if remember_path.exists():
+                    remember_path.unlink()
+                self.update_client.clear_saved_session()
         except Exception:
             pass
         self.user_session = session
@@ -507,8 +514,8 @@ class UserAdminDialog(QDialog):
         hint.setStyleSheet("color:#9ca3af;")
         layout.addWidget(hint)
 
-        self.table = QTableWidget(0, 7)
-        self.table.setHorizontalHeaderLabels(["Name", "Benutzername", "Funktion", "Telefon", "Wohnort", "Status", "Letzte Anmeldung"])
+        self.table = QTableWidget(0, 8)
+        self.table.setHorizontalHeaderLabels(["Vorname", "Nachname", "Benutzername", "Funktion", "Telefon", "Wohnort", "Status", "Letzte Anmeldung"])
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -581,7 +588,8 @@ class UserAdminDialog(QDialog):
         self.table.setRowCount(len(self.users))
         for row, user in enumerate(self.users):
             values = [
-                user.get("display_name", ""),
+                user.get("first_name", ""),
+                user.get("last_name", ""),
                 user.get("username", ""),
                 user.get("team_role", "Mechaniker"),
                 user.get("phone", ""),
@@ -607,7 +615,8 @@ class UserAdminDialog(QDialog):
         dialog = QDialog(self)
         dialog.setWindowTitle("Benutzer anlegen")
         form = QFormLayout(dialog)
-        name = QLineEdit()
+        first_name = QLineEdit()
+        last_name = QLineEdit()
         username = QLineEdit()
         phone = QLineEdit()
         residence = QLineEdit()
@@ -617,7 +626,8 @@ class UserAdminDialog(QDialog):
         team_role.addItems(["Reifen", "Mechaniker", "Car Chief", "Fahrer"])
         permission = QComboBox()
         permission.addItems(["user", "admin"])
-        form.addRow("Name", name)
+        form.addRow("Vorname", first_name)
+        form.addRow("Nachname", last_name)
         form.addRow("Benutzername", username)
         form.addRow("Telefon", phone)
         form.addRow("Wohnort", residence)
@@ -637,7 +647,8 @@ class UserAdminDialog(QDialog):
         try:
             self._call({
                 "action": "create",
-                "display_name": name.text().strip(),
+                "first_name": first_name.text().strip(),
+                "last_name": last_name.text().strip(),
                 "username": username.text().strip(),
                 "phone": phone.text().strip(),
                 "residence": residence.text().strip(),
@@ -656,7 +667,8 @@ class UserAdminDialog(QDialog):
         dialog = QDialog(self)
         dialog.setWindowTitle("Person bearbeiten")
         form = QFormLayout(dialog)
-        name = QLineEdit(user.get("display_name", ""))
+        first_name = QLineEdit(user.get("first_name", ""))
+        last_name = QLineEdit(user.get("last_name", ""))
         username = QLineEdit(user.get("username", ""))
         phone = QLineEdit(user.get("phone", ""))
         residence = QLineEdit(user.get("residence", ""))
@@ -666,7 +678,8 @@ class UserAdminDialog(QDialog):
         current = user.get("team_role", "Mechaniker")
         if current in roles:
             team_role.setCurrentText(current)
-        form.addRow("Name", name)
+        form.addRow("Vorname", first_name)
+        form.addRow("Nachname", last_name)
         form.addRow("Benutzername", username)
         form.addRow("Telefon", phone)
         form.addRow("Wohnort", residence)
@@ -685,7 +698,8 @@ class UserAdminDialog(QDialog):
             self._call({
                 "action": "update_profile",
                 "user_id": user["id"],
-                "display_name": name.text().strip(),
+                "first_name": first_name.text().strip(),
+                "last_name": last_name.text().strip(),
                 "username": username.text().strip(),
                 "phone": phone.text().strip(),
                 "residence": residence.text().strip(),
@@ -748,6 +762,115 @@ class UpdateClient:
         self.current_version = current_version
         self.data_folder = Path(data_folder)
         self.data_folder.mkdir(parents=True, exist_ok=True)
+
+    @property
+    def saved_session_path(self) -> Path:
+        return self.data_folder / "saved_session.json"
+
+    def save_session(self, session: UserSession):
+        data = {
+            "username": session.username,
+            "display_name": session.display_name,
+            "role": session.role,
+            "channel": session.channel,
+            "access_token": session.token,
+            "refresh_token": session.refresh_token,
+            "user_id": session.user_id,
+            "team_id": session.team_id,
+        }
+        self.saved_session_path.write_text(json.dumps(data), encoding="utf-8")
+
+    def clear_saved_session(self):
+        try:
+            if self.saved_session_path.exists():
+                self.saved_session_path.unlink()
+        except Exception:
+            pass
+
+    def restore_saved_session(self) -> UserSession | None:
+        if not self.saved_session_path.exists():
+            return None
+        try:
+            saved = json.loads(self.saved_session_path.read_text(encoding="utf-8"))
+            refresh_token = saved.get("refresh_token", "")
+            if not refresh_token:
+                self.clear_saved_session()
+                return None
+
+            body = json.dumps({"refresh_token": refresh_token}).encode("utf-8")
+            request = urllib.request.Request(
+                SUPABASE_URL + "/auth/v1/token?grant_type=refresh_token",
+                data=body,
+                headers={
+                    "apikey": SUPABASE_PUBLISHABLE_KEY,
+                    "Content-Type": "application/json",
+                    "User-Agent": "SORG-GT-Data-Analyzer",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(request, timeout=12) as response:
+                data = json.loads(response.read().decode("utf-8"))
+
+            token = data.get("access_token", "")
+            new_refresh = data.get("refresh_token", refresh_token)
+            user = data.get("user") or {}
+            user_id = user.get("id", saved.get("user_id", ""))
+            if not token or not user_id:
+                self.clear_saved_session()
+                return None
+
+            headers = {
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json",
+                "User-Agent": "SORG-GT-Data-Analyzer",
+            }
+
+            team_id = saved.get("team_id", "")
+            role = saved.get("role", "user")
+            try:
+                q = urllib.request.Request(
+                    SUPABASE_URL + f"/rest/v1/team_members?user_id=eq.{user_id}&select=team_id,role&limit=1",
+                    headers=headers,
+                )
+                with urllib.request.urlopen(q, timeout=10) as response:
+                    memberships = json.loads(response.read().decode("utf-8"))
+                if memberships:
+                    team_id = memberships[0].get("team_id", team_id)
+                    role = memberships[0].get("role", role)
+            except Exception:
+                pass
+
+            username = saved.get("username", "")
+            display_name = saved.get("display_name", username)
+            try:
+                q = urllib.request.Request(
+                    SUPABASE_URL + f"/rest/v1/profiles?id=eq.{user_id}&select=username,display_name&limit=1",
+                    headers=headers,
+                )
+                with urllib.request.urlopen(q, timeout=10) as response:
+                    profiles = json.loads(response.read().decode("utf-8"))
+                if profiles:
+                    username = profiles[0].get("username") or username
+                    display_name = profiles[0].get("display_name") or display_name
+            except Exception:
+                pass
+
+            session = UserSession(
+                username=username,
+                display_name=display_name,
+                role=role,
+                channel=saved.get("channel", "stable"),
+                token=token,
+                refresh_token=new_refresh,
+                user_id=user_id,
+                team_id=team_id,
+            )
+            self.save_session(session)
+            return session
+        except Exception:
+            self.clear_saved_session()
+            return None
 
     @staticmethod
     def _version_tuple(value):
