@@ -168,11 +168,11 @@ class LoginDialog(QDialog):
         card_layout.addWidget(subtitle)
         card_layout.addSpacing(10)
 
-        user_label = QLabel("E-Mail")
+        user_label = QLabel("Benutzername")
         user_label.setObjectName("subtle")
         card_layout.addWidget(user_label)
         self.username = QLineEdit()
-        self.username.setPlaceholderText("E-Mail-Adresse eingeben")
+        self.username.setPlaceholderText("Benutzername eingeben")
         self.username.setClearButtonEnabled(True)
         card_layout.addWidget(self.username)
 
@@ -199,7 +199,7 @@ class LoginDialog(QDialog):
         self.password.returnPressed.connect(self.try_login)
         card_layout.addWidget(self.password)
 
-        self.remember_user = QCheckBox("E-Mail auf diesem PC merken")
+        self.remember_user = QCheckBox("Benutzername auf diesem PC merken")
         card_layout.addWidget(self.remember_user)
 
         self.status = QLabel("")
@@ -344,34 +344,37 @@ class LoginDialog(QDialog):
                 message = str(error)
             raise RuntimeError(message) from error
 
-    def _supabase_login(self, email: str, password: str) -> UserSession:
-        data = self._supabase_request(
-            "/auth/v1/token?grant_type=password",
+    def _supabase_login(self, username: str, password: str) -> UserSession:
+        body = json.dumps({"username": username, "password": password}).encode("utf-8")
+        request = urllib.request.Request(
+            SUPABASE_URL + "/functions/v1/auth-login",
+            data=body,
+            headers={
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
+                "Content-Type": "application/json",
+                "User-Agent": "SORG-GT-Data-Analyzer",
+            },
             method="POST",
-            body={"email": email, "password": password},
         )
+        try:
+            with urllib.request.urlopen(request, timeout=12) as response:
+                data = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            try:
+                detail = json.loads(error.read().decode("utf-8"))
+                message = detail.get("error") or detail.get("message") or "Benutzername oder Passwort ist falsch."
+            except Exception:
+                message = "Benutzername oder Passwort ist falsch."
+            raise RuntimeError(message) from error
+
         token = data.get("access_token", "")
         user = data.get("user") or {}
         user_id = user.get("id", "")
-        display_name = (
-            (user.get("user_metadata") or {}).get("display_name")
-            or email.split("@", 1)[0]
-        )
+        display_name = data.get("display_name") or username
         role = "user"
         team_id = ""
 
         if token and user_id:
-            try:
-                profiles = self._supabase_request(
-                    f"/rest/v1/profiles?id=eq.{user_id}&select=display_name,role",
-                    token=token,
-                ) or []
-                if profiles:
-                    display_name = profiles[0].get("display_name") or display_name
-                    role = profiles[0].get("role") or role
-            except Exception:
-                pass
-
             try:
                 memberships = self._supabase_request(
                     f"/rest/v1/team_members?user_id=eq.{user_id}&select=team_id,role&limit=1",
@@ -384,7 +387,7 @@ class LoginDialog(QDialog):
                 pass
 
         return UserSession(
-            username=email,
+            username=username,
             display_name=display_name,
             role=role,
             channel="stable",
@@ -427,14 +430,16 @@ class LoginDialog(QDialog):
         )
 
     def request_password_reset(self):
-        email = self.username.text().strip()
-        if not email or "@" not in email:
-            self.status.setText("Bitte zuerst deine E-Mail-Adresse eingeben.")
+        username = self.username.text().strip()
+        if not username:
+            self.status.setText("Bitte zuerst deinen Benutzernamen eingeben.")
             return
-        body = json.dumps({"email": email}).encode("utf-8")
-        redirect = urllib.parse.quote(MOBILE_APP_URL, safe="")
+        body = json.dumps({
+            "username": username,
+            "redirect_to": MOBILE_APP_URL,
+        }).encode("utf-8")
         request = urllib.request.Request(
-            SUPABASE_URL + "/auth/v1/recover?redirect_to=" + redirect,
+            SUPABASE_URL + "/functions/v1/auth-recover",
             data=body,
             headers={
                 "apikey": SUPABASE_PUBLISHABLE_KEY,
@@ -449,8 +454,8 @@ class LoginDialog(QDialog):
             QMessageBox.information(
                 self,
                 "Passwort zurücksetzen",
-                "Eine E-Mail zum Zurücksetzen des Passworts wurde versendet.\n\n"
-                "Öffne den Link in der E-Mail und vergib dort dein neues Passwort.",
+                "Wenn für diesen Zugang eine Wiederherstellung möglich ist, wurde eine Reset-Nachricht versendet.\n\n"
+                "Alternativ kann ein Administrator dein Passwort direkt ändern.",
             )
         except Exception as error:
             self.status.setText(f"Passwort-Reset nicht möglich: {error}")
@@ -459,7 +464,7 @@ class LoginDialog(QDialog):
         username = self.username.text().strip()
         password = self.password.text()
         if not username or not password:
-            self.status.setText("Bitte E-Mail und Passwort eingeben.")
+            self.status.setText("Bitte Benutzername und Passwort eingeben.")
             return
         self.login_button.setEnabled(False)
         try:
@@ -501,8 +506,8 @@ class UserAdminDialog(QDialog):
         hint.setStyleSheet("color:#9ca3af;")
         layout.addWidget(hint)
 
-        self.table = QTableWidget(0, 5)
-        self.table.setHorizontalHeaderLabels(["Name", "E-Mail", "Rolle", "Status", "Letzte Anmeldung"])
+        self.table = QTableWidget(0, 7)
+                self.table.setHorizontalHeaderLabels(["Name", "Benutzername", "Funktion", "Telefon", "Wohnort", "Status", "Letzte Anmeldung"])
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -521,7 +526,7 @@ class UserAdminDialog(QDialog):
         active_btn.clicked.connect(self.toggle_active)
         buttons.addWidget(active_btn)
 
-        role_btn = QPushButton("Rolle ändern")
+        role_btn = QPushButton("Admin-Recht ändern")
         role_btn.clicked.connect(self.change_role)
         buttons.addWidget(role_btn)
 
@@ -572,8 +577,10 @@ class UserAdminDialog(QDialog):
         for row, user in enumerate(self.users):
             values = [
                 user.get("display_name", ""),
-                user.get("email", ""),
-                user.get("role", "user"),
+                user.get("username", ""),
+                user.get("team_role", "Mechaniker"),
+                user.get("phone", ""),
+                user.get("residence", ""),
                 "Inaktiv" if user.get("inactive") else "Aktiv",
                 user.get("last_sign_in_at") or "—",
             ]
@@ -596,15 +603,22 @@ class UserAdminDialog(QDialog):
         dialog.setWindowTitle("Benutzer anlegen")
         form = QFormLayout(dialog)
         name = QLineEdit()
-        email = QLineEdit()
+        username = QLineEdit()
+        phone = QLineEdit()
+        residence = QLineEdit()
         password = QLineEdit()
         password.setEchoMode(QLineEdit.Password)
-        role = QComboBox()
-        role.addItems(["user", "admin"])
+        team_role = QComboBox()
+        team_role.addItems(["Reifen", "Mechaniker", "Car Chief", "Fahrer"])
+        permission = QComboBox()
+        permission.addItems(["user", "admin"])
         form.addRow("Name", name)
-        form.addRow("E-Mail", email)
+        form.addRow("Benutzername", username)
+        form.addRow("Telefon", phone)
+        form.addRow("Wohnort", residence)
+        form.addRow("Funktion", team_role)
+        form.addRow("Berechtigung", permission)
         form.addRow("Passwort", password)
-        form.addRow("Rolle", role)
         row = QHBoxLayout()
         ok = QPushButton("Anlegen")
         cancel = QPushButton("Abbrechen")
@@ -619,9 +633,12 @@ class UserAdminDialog(QDialog):
             self._call({
                 "action": "create",
                 "display_name": name.text().strip(),
-                "email": email.text().strip(),
+                "username": username.text().strip(),
+                "phone": phone.text().strip(),
+                "residence": residence.text().strip(),
+                "team_role": team_role.currentText(),
+                "permission": permission.currentText(),
                 "password": password.text(),
-                "role": role.currentText(),
             })
             self.refresh()
         except Exception as error:
@@ -632,7 +649,7 @@ class UserAdminDialog(QDialog):
         if not user:
             return
         password, ok = QInputDialog.getText(
-            self, "Passwort setzen", f"Neues Passwort für {user.get('email','')}:", QLineEdit.Password
+            self, "Passwort setzen", f"Neues Passwort für {user.get('username','')}:", QLineEdit.Password
         )
         if not ok:
             return
@@ -648,7 +665,7 @@ class UserAdminDialog(QDialog):
             return
         active = bool(user.get("inactive"))
         label = "aktivieren" if active else "deaktivieren"
-        if QMessageBox.question(self, "Benutzer", f"{user.get('email','')} wirklich {label}?") != QMessageBox.Yes:
+        if QMessageBox.question(self, "Benutzer", f"{user.get('username','')} wirklich {label}?") != QMessageBox.Yes:
             return
         try:
             self._call({"action": "set_active", "user_id": user["id"], "active": active})
@@ -661,9 +678,9 @@ class UserAdminDialog(QDialog):
         if not user:
             return
         choices = ["user", "admin"]
-        current = user.get("role", "user")
+        current = user.get("permission", "user")
         value, ok = QInputDialog.getItem(
-            self, "Rolle ändern", "Rolle:", choices, choices.index(current) if current in choices else 0, False
+            self, "Admin-Recht ändern", "Berechtigung:", choices, choices.index(current) if current in choices else 0, False
         )
         if not ok:
             return
