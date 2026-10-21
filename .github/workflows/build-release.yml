@@ -76,7 +76,7 @@ jobs:
             version = $version
             url = "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/$tag/SORG_GT_Data_Analyzer_Setup.exe"
             sha256 = $sha
-            notes = "Login ohne E-Mail mit Benutzername | Teamrollen Reifen, Mechaniker, Car Chief und Fahrer | Wohnort und Telefonnummer in Benutzerprofilen"
+            notes = "Update-Prüfung ohne veralteten Cache | Benutzername statt E-Mail | Teamrollen und Personendaten"
           }
           $latest | ConvertTo-Json | Set-Content update\latest.json -Encoding utf8
           git config user.name "github-actions[bot]"
@@ -94,4 +94,4 @@ jobs:
         run: |
           $version = "${{ steps.version.outputs.version }}"
           $tag = "${{ steps.version.outputs.tag }}"
-          gh release create $tag "app\release\SORG_GT_Data_Analyzer_Setup.exe" --title "SORG GT Data Analyzer V$version" --notes "Benutzername statt E-Mail, Motorsport-Teamrollen sowie erweiterte Personendaten mit Wohnort und Telefonnummer. Automatische Updates bleiben aktiv."
+          gh release create $tag "app\release\SORG_GT_Data_Analyzer_Setup.exe" --title "SORG GT Data Analyzer V$version" --notes "Update-Prüfung wurde gegen veraltete Cache-Daten abgesichert. Benutzername statt E-Mail sowie Motorsport-Teamrollen und Personendaten bleiben enthalten."
