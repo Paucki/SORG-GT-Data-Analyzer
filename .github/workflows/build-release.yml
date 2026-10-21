@@ -76,7 +76,7 @@ jobs:
             version = $version
             url = "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/$tag/SORG_GT_Data_Analyzer_Setup.exe"
             sha256 = $sha
-            notes = "Neuer animierter Nürburgring-Startbildschirm am PC | gespeicherte Anmeldung | Abmelden | Personendaten erweitert"
+            notes = "Nordschleife statt GP-Strecke auf PC und Mobile | animierter Rennwagen | gespeicherte Anmeldung | Abmelden"
           }
           $latest | ConvertTo-Json | Set-Content update\latest.json -Encoding utf8
           git config user.name "github-actions[bot]"
@@ -94,4 +94,4 @@ jobs:
         run: |
           $version = "${{ steps.version.outputs.version }}"
           $tag = "${{ steps.version.outputs.tag }}"
-          gh release create $tag "app\release\SORG_GT_Data_Analyzer_Setup.exe" --title "SORG GT Data Analyzer V$version" --notes "Neuer animierter Nürburgring-Startbildschirm für die Windows-App. Gespeicherte Anmeldung, Abmelden und erweiterte Personendaten bleiben enthalten."
+          gh release create $tag "app\release\SORG_GT_Data_Analyzer_Setup.exe" --title "SORG GT Data Analyzer V$version" --notes "Startbildschirm auf PC und Mobile zeigt jetzt die Nürburgring Nordschleife statt der GP-Strecke. Animierter Rennwagen, gespeicherte Anmeldung und Abmelden bleiben enthalten."
