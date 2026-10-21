@@ -4557,7 +4557,7 @@ class MainWindow(QMainWindow):
 
 
 class NuerburgringSplash(QWidget):
-    """Moderner Desktop-Startbildschirm mit der korrekten Nordschleifen-Silhouette."""
+    """Klassischer SORG Startbildschirm mit korrekter Nordschleifenform."""
 
     ROUTE = [
         (52, 168), (66, 148), (72, 137), (84, 129), (101, 118), (118, 108),
@@ -4571,13 +4571,16 @@ class NuerburgringSplash(QWidget):
 
     def __init__(self):
         super().__init__(None, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setFixedSize(920, 540)
+        self.setFixedSize(900, 520)
         self.progress = 0.0
         self._timer = QTimer(self)
         self._timer.setInterval(16)
         self._timer.timeout.connect(self._advance_car)
         self.track_pixmap = QPixmap()
-        self.track_pixmap.loadFromData(base64.b64decode(NORDSCHLEIFE_TRACK_B64), "PNG")
+        self.track_pixmap.loadFromData(
+            base64.b64decode(NORDSCHLEIFE_TRACK_B64),
+            "PNG",
+        )
 
         screen = QApplication.primaryScreen()
         if screen is not None:
@@ -4593,7 +4596,7 @@ class NuerburgringSplash(QWidget):
         self._timer.start()
 
     def _advance_car(self):
-        self.progress = (self.progress + 0.0028) % 1.0
+        self.progress = (self.progress + 0.0036) % 1.0
         self.update()
 
     def _route_point(self, rect: QRectF) -> tuple[QPointF, float]:
@@ -4607,97 +4610,110 @@ class NuerburgringSplash(QWidget):
         y = y1 + (y2 - y1) * t
         px = rect.left() + (x / 204.0) * rect.width()
         py = rect.top() + (y / 192.0) * rect.height()
-        angle = -__import__("math").degrees(__import__("math").atan2(y2 - y1, x2 - x1))
+        angle = -__import__("math").degrees(
+            __import__("math").atan2(y2 - y1, x2 - x1)
+        )
         return QPointF(px, py), angle
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.fillRect(self.rect(), QColor("#07090c"))
+        painter.fillRect(self.rect(), QColor("#06080b"))
 
+        # Dezenter roter Hintergrundakzent wie im ursprünglichen Startscreen.
+        painter.setBrush(QBrush(QColor(60, 10, 18, 150)))
         painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor("#11151b"))
-        painter.drawRoundedRect(QRectF(24, 22, 872, 496), 22, 22)
-        painter.setBrush(QColor("#181116"))
-        painter.drawEllipse(QRectF(560, -70, 430, 430))
+        painter.drawEllipse(QRectF(500, 35, 390, 390))
 
         painter.setPen(QColor("#ffffff"))
-        brand_font = QFont("Segoe UI", 31, QFont.Black)
-        brand_font.setLetterSpacing(QFont.AbsoluteSpacing, 2.6)
+        brand_font = QFont("Segoe UI", 30, QFont.Black)
+        brand_font.setLetterSpacing(QFont.AbsoluteSpacing, 2.5)
         painter.setFont(brand_font)
-        painter.drawText(QRectF(58, 48, 350, 50), Qt.AlignLeft | Qt.AlignVCenter, "SORG")
+        painter.drawText(
+            QRectF(54, 35, 350, 55),
+            Qt.AlignLeft | Qt.AlignVCenter,
+            "SORG",
+        )
 
         painter.setPen(QColor("#e21b2d"))
-        gt_font = QFont("Segoe UI", 14, QFont.Black)
-        gt_font.setLetterSpacing(QFont.AbsoluteSpacing, 3.6)
+        gt_font = QFont("Segoe UI", 15, QFont.Black)
+        gt_font.setLetterSpacing(QFont.AbsoluteSpacing, 4.0)
         painter.setFont(gt_font)
-        painter.drawText(QRectF(58, 94, 350, 34), Qt.AlignLeft | Qt.AlignVCenter, "GT DATA ANALYZER")
+        painter.drawText(
+            QRectF(54, 82, 350, 36),
+            Qt.AlignLeft | Qt.AlignVCenter,
+            "GT DATA ANALYZER",
+        )
 
-        painter.setPen(QColor("#8b95a1"))
-        meta_font = QFont("Segoe UI", 9, QFont.Bold)
-        meta_font.setLetterSpacing(QFont.AbsoluteSpacing, 1.6)
-        painter.setFont(meta_font)
-        painter.drawText(QRectF(58, 135, 360, 24), Qt.AlignLeft | Qt.AlignVCenter, "NÜRBURGRING · NORDSCHLEIFE")
+        painter.setPen(QColor("#8e98a5"))
+        sub_font = QFont("Segoe UI", 10, QFont.Bold)
+        sub_font.setLetterSpacing(QFont.AbsoluteSpacing, 2.0)
+        painter.setFont(sub_font)
+        painter.drawText(
+            QRectF(54, 120, 420, 28),
+            Qt.AlignLeft | Qt.AlignVCenter,
+            "NÜRBURGRING NORDSCHLEIFE · RENNBETRIEB",
+        )
 
-        track_panel = QRectF(470, 70, 365, 350)
-        painter.setPen(QPen(QColor("#2b3038"), 1))
-        painter.setBrush(QColor("#090c10"))
-        painter.drawRoundedRect(track_panel, 18, 18)
-
-        image_rect = QRectF(495, 90, 315, 296)
+        # Richtige Nordschleife aus der vom Nutzer bereitgestellten Referenz.
+        target = QRectF(300, 145, 535, 255)
+        draw_rect = target
         if not self.track_pixmap.isNull():
             scaled = self.track_pixmap.scaled(
-                QSize(int(image_rect.width()), int(image_rect.height())),
+                QSize(int(target.width()), int(target.height())),
                 Qt.KeepAspectRatio,
                 Qt.SmoothTransformation,
             )
             draw_rect = QRectF(
-                image_rect.center().x() - scaled.width() / 2,
-                image_rect.center().y() - scaled.height() / 2,
+                target.center().x() - scaled.width() / 2,
+                target.center().y() - scaled.height() / 2,
                 scaled.width(),
                 scaled.height(),
             )
             painter.drawPixmap(draw_rect.toRect(), scaled)
-        else:
-            draw_rect = image_rect
 
+        # Animierter Wagen bleibt erhalten.
         car, angle = self._route_point(draw_rect)
         painter.save()
         painter.translate(car)
         painter.rotate(angle)
         painter.setPen(Qt.NoPen)
         painter.setBrush(QColor("#e21b2d"))
-        painter.drawRoundedRect(QRectF(-11, -5, 22, 10), 3, 3)
-        painter.setBrush(QColor("#f6f7f8"))
-        painter.drawRoundedRect(QRectF(-4, -7, 8, 4), 2, 2)
+        painter.drawRoundedRect(QRectF(-17, -8, 34, 16), 5, 5)
+        painter.setBrush(QColor("#f3f5f7"))
+        painter.drawRoundedRect(QRectF(-7, -11, 14, 7), 3, 3)
+        painter.setBrush(QColor("#050607"))
+        painter.drawRoundedRect(QRectF(-15, -10, 6, 4), 1.5, 1.5)
+        painter.drawRoundedRect(QRectF(9, -10, 6, 4), 1.5, 1.5)
+        painter.drawRoundedRect(QRectF(-15, 6, 6, 4), 1.5, 1.5)
+        painter.drawRoundedRect(QRectF(9, 6, 6, 4), 1.5, 1.5)
         painter.restore()
 
         painter.setPen(QColor("#ffffff"))
-        title_font = QFont("Segoe UI", 24, QFont.Black)
+        title_font = QFont("Segoe UI", 22, QFont.Black)
         painter.setFont(title_font)
-        painter.drawText(QRectF(58, 205, 355, 70), Qt.AlignLeft | Qt.AlignVCenter, "Race engineering.\nKlar. Schnell. Live.")
-
-        painter.setPen(QColor("#9aa3ad"))
-        copy_font = QFont("Segoe UI", 10, QFont.Medium)
-        painter.setFont(copy_font)
         painter.drawText(
-            QRectF(58, 287, 350, 70),
-            Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
-            "Fahrzeug-, Reifen- und Sessiondaten werden geladen. "
-            "Die Oberfläche ist für den Einsatz an der Box und unterwegs optimiert.",
+            QRectF(54, 430, 530, 42),
+            Qt.AlignLeft | Qt.AlignVCenter,
+            "Willkommen im Rennwochenende",
         )
 
-        painter.setPen(QColor("#68717c"))
-        small_font = QFont("Segoe UI", 9, QFont.DemiBold)
-        painter.setFont(small_font)
-        painter.drawText(QRectF(58, 443, 360, 24), Qt.AlignLeft | Qt.AlignVCenter, "SYSTEMSTART · DATENBANK · TEAM-SYNC")
+        painter.setPen(QColor("#838d99"))
+        status_font = QFont("Segoe UI", 10, QFont.DemiBold)
+        painter.setFont(status_font)
+        painter.drawText(
+            QRectF(55, 473, 500, 24),
+            Qt.AlignLeft | Qt.AlignVCenter,
+            "Fahrzeug- und Teamdaten werden vorbereitet …",
+        )
 
         painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor("#242a31"))
-        painter.drawRoundedRect(QRectF(58, 482, 777, 5), 2.5, 2.5)
+        painter.setBrush(QColor("#222830"))
+        painter.drawRoundedRect(QRectF(615, 462, 225, 5), 2.5, 2.5)
         painter.setBrush(QColor("#e21b2d"))
-        width = 777 * ((self.progress * 1.75) % 1.0)
-        painter.drawRoundedRect(QRectF(58, 482, width, 5), 2.5, 2.5)
+        width = 225 * ((self.progress * 2.4) % 1.0)
+        painter.drawRoundedRect(QRectF(615, 462, width, 5), 2.5, 2.5)
+
 
 def show_nuerburgring_splash(duration_ms: int = 2300):
     splash = NuerburgringSplash()
