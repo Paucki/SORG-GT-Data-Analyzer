@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import hashlib
 import json
@@ -50,6 +50,7 @@ class UserSession:
     refresh_token: str = ""
     user_id: str = ""
     team_id: str = ""
+    vehicle_ids: list[str] = field(default_factory=list)
 
 
 class LoginDialog(QDialog):
@@ -377,6 +378,7 @@ class LoginDialog(QDialog):
         display_name = data.get("display_name") or username
         role = "user"
         team_id = ""
+        vehicle_ids = []
 
         if token and user_id:
             try:
@@ -387,6 +389,12 @@ class LoginDialog(QDialog):
                 if memberships:
                     team_id = memberships[0].get("team_id", "")
                     role = memberships[0].get("role") or role
+                if team_id and role != "admin":
+                    assigned = self._supabase_request(
+                        f"/rest/v1/user_vehicle_assignments?team_id=eq.{team_id}&user_id=eq.{user_id}&select=vehicle_id",
+                        token=token,
+                    ) or []
+                    vehicle_ids = [str(row.get("vehicle_id")) for row in assigned if row.get("vehicle_id")]
             except Exception:
                 pass
 
@@ -399,6 +407,7 @@ class LoginDialog(QDialog):
             refresh_token=refresh_token,
             user_id=user_id,
             team_id=team_id,
+            vehicle_ids=vehicle_ids,
         )
 
     def _online_login(self, username: str, password: str) -> UserSession:
@@ -500,8 +509,9 @@ class UserAdminDialog(QDialog):
         super().__init__(parent)
         self.session = session
         self.users = []
+        self.vehicles = []
         self.setWindowTitle("SORG GT · Benutzerverwaltung")
-        self.resize(760, 520)
+        self.resize(980, 560)
         self.setModal(True)
 
         layout = QVBoxLayout(self)
@@ -514,8 +524,8 @@ class UserAdminDialog(QDialog):
         hint.setStyleSheet("color:#9ca3af;")
         layout.addWidget(hint)
 
-        self.table = QTableWidget(0, 8)
-        self.table.setHorizontalHeaderLabels(["Vorname", "Nachname", "Benutzername", "Funktion", "Telefon", "Wohnort", "Status", "Letzte Anmeldung"])
+        self.table = QTableWidget(0, 9)
+        self.table.setHorizontalHeaderLabels(["Vorname", "Nachname", "Benutzername", "Funktion", "Fahrzeuge", "Telefon", "Wohnort", "Status", "Letzte Anmeldung"])
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -541,6 +551,10 @@ class UserAdminDialog(QDialog):
         role_btn = QPushButton("Admin-Recht ändern")
         role_btn.clicked.connect(self.change_role)
         buttons.addWidget(role_btn)
+
+        vehicle_btn = QPushButton("Fahrzeuge zuweisen")
+        vehicle_btn.clicked.connect(self.assign_vehicles)
+        buttons.addWidget(vehicle_btn)
 
         buttons.addStretch()
         refresh_btn = QPushButton("Aktualisieren")
@@ -582,16 +596,29 @@ class UserAdminDialog(QDialog):
         try:
             data = self._call({"action": "list"})
             self.users = data.get("users", [])
+            self.vehicles = data.get("vehicles", [])
         except Exception as error:
             self.status.setText(str(error))
             return
         self.table.setRowCount(len(self.users))
         for row, user in enumerate(self.users):
+            assigned = set(user.get("vehicle_ids") or [])
+            vehicle_names = []
+            if user.get("permission") == "admin":
+                vehicle_names = ["Alle Fahrzeuge"]
+            else:
+                for vehicle in self.vehicles:
+                    if vehicle.get("id") in assigned:
+                        label = vehicle.get("name") or "Fahrzeug"
+                        if vehicle.get("start_number"):
+                            label += f" #{vehicle.get('start_number')}"
+                        vehicle_names.append(label)
             values = [
                 user.get("first_name", ""),
                 user.get("last_name", ""),
                 user.get("username", ""),
                 user.get("team_role", "Mechaniker"),
+                ", ".join(vehicle_names) if vehicle_names else "—",
                 user.get("phone", ""),
                 user.get("residence", ""),
                 "Inaktiv" if user.get("inactive") else "Aktiv",
@@ -709,6 +736,62 @@ class UserAdminDialog(QDialog):
         except Exception as error:
             QMessageBox.critical(self, "Person bearbeiten", str(error))
 
+    def assign_vehicles(self):
+        user = self._selected()
+        if not user:
+            return
+        if user.get("permission") == "admin":
+            QMessageBox.information(
+                self,
+                "Fahrzeuge",
+                "Administratoren sehen automatisch alle Fahrzeuge.",
+            )
+            return
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"Fahrzeuge für {user.get('username','')} zuweisen")
+        dialog.resize(460, 420)
+        layout = QVBoxLayout(dialog)
+        hint = QLabel("Wähle alle Fahrzeuge aus, die dieser Benutzer betreuen darf.")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+
+        assigned = set(user.get("vehicle_ids") or [])
+        checks = []
+        for vehicle in self.vehicles:
+            label = vehicle.get("name") or "Fahrzeug"
+            if vehicle.get("start_number"):
+                label += f" · Startnr. {vehicle.get('start_number')}"
+            box = QCheckBox(label)
+            box.setChecked(vehicle.get("id") in assigned)
+            layout.addWidget(box)
+            checks.append((box, vehicle.get("id")))
+        layout.addStretch()
+
+        row = QHBoxLayout()
+        ok = QPushButton("Speichern")
+        cancel = QPushButton("Abbrechen")
+        row.addWidget(ok)
+        row.addWidget(cancel)
+        layout.addLayout(row)
+        ok.clicked.connect(dialog.accept)
+        cancel.clicked.connect(dialog.reject)
+
+        if dialog.exec() != QDialog.Accepted:
+            return
+
+        vehicle_ids = [vehicle_id for box, vehicle_id in checks if box.isChecked() and vehicle_id]
+        try:
+            self._call({
+                "action": "set_vehicles",
+                "user_id": user["id"],
+                "vehicle_ids": vehicle_ids,
+            })
+            self.refresh()
+        except Exception as error:
+            QMessageBox.critical(self, "Fahrzeuge zuweisen", str(error))
+
+
     def set_password(self):
         user = self._selected()
         if not user:
@@ -777,6 +860,7 @@ class UpdateClient:
             "refresh_token": session.refresh_token,
             "user_id": session.user_id,
             "team_id": session.team_id,
+            "vehicle_ids": session.vehicle_ids,
         }
         self.saved_session_path.write_text(json.dumps(data), encoding="utf-8")
 
@@ -828,6 +912,7 @@ class UpdateClient:
 
             team_id = saved.get("team_id", "")
             role = saved.get("role", "user")
+            vehicle_ids = list(saved.get("vehicle_ids") or [])
             try:
                 q = urllib.request.Request(
                     SUPABASE_URL + f"/rest/v1/team_members?user_id=eq.{user_id}&select=team_id,role&limit=1",
@@ -838,6 +923,16 @@ class UpdateClient:
                 if memberships:
                     team_id = memberships[0].get("team_id", team_id)
                     role = memberships[0].get("role", role)
+                if team_id and role != "admin":
+                    q = urllib.request.Request(
+                        SUPABASE_URL + f"/rest/v1/user_vehicle_assignments?team_id=eq.{team_id}&user_id=eq.{user_id}&select=vehicle_id",
+                        headers=headers,
+                    )
+                    with urllib.request.urlopen(q, timeout=10) as response:
+                        assigned = json.loads(response.read().decode("utf-8"))
+                    vehicle_ids = [str(row.get("vehicle_id")) for row in assigned if row.get("vehicle_id")]
+                elif role == "admin":
+                    vehicle_ids = []
             except Exception:
                 pass
 
@@ -865,6 +960,7 @@ class UpdateClient:
                 refresh_token=new_refresh,
                 user_id=user_id,
                 team_id=team_id,
+                vehicle_ids=vehicle_ids,
             )
             self.save_session(session)
             return session
