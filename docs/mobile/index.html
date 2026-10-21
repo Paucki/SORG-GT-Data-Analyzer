@@ -10,7 +10,7 @@
 <title>SORG GT Mobile</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=183">
+<link rel="stylesheet" href="styles.css?v=185">
 </head>
 <body>
 <div id="splashScreen" class="splash-screen">
@@ -188,6 +188,20 @@
   </div>
 </section>
 
+<section class="view" data-view="teamdata">
+  <div class="section-head"><button class="backbtn" data-go="more">‹</button><div><div class="eyebrow">TEAM · CLOUD</div><h2>Gemeinsame Daten</h2></div></div>
+  <div class="teamdata-grid">
+    <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Fahrer</div><div id="teamDrivers" class="shared-list"></div></div></div>
+    <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Fahrzeuge</div><div id="teamVehicles" class="shared-list"></div></div></div>
+    <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Strecken</div><div id="teamTracks" class="shared-list"></div></div></div>
+    <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Sessions</div><div id="teamSessions" class="shared-list"></div></div></div>
+    <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Session-Änderungen</div><div id="teamChanges" class="shared-list"></div></div></div>
+    <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Setup-Einträge</div><div id="teamSetupEntries" class="shared-list"></div></div></div>
+    <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Zieldrücke</div><div id="teamPressureSetups" class="shared-list"></div></div></div>
+    <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Reifen-Notizen</div><div id="teamTyreNotes" class="shared-list"></div></div></div>
+  </div>
+</section>
+
 <section class="view" data-view="more">
   <div class="section-head"><div><div class="eyebrow">MEHR</div><h2>Team & System</h2></div></div>
   <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Cloud</div><p id="cloudInfo" class="muted">Verbindung wird geprüft …</p><button id="reloadBtn" class="ghost full">Jetzt synchronisieren</button></div></div>
@@ -211,6 +225,14 @@
         <div id="adminUserList" class="user-list"></div>
       </div>
     </div>
+  </div>
+  <div class="settings-menu">
+    <div class="settings-caption">TEAMDATEN</div>
+    <button class="settings-row settings-button" type="button" data-go="teamdata">
+      <span class="settings-icon">☁</span>
+      <span class="settings-copy"><b>Gemeinsame Daten</b><small>Fahrer, Fahrzeuge, Sessions, Setups und Rennbetriebsdaten</small></span>
+      <span class="settings-arrow">›</span>
+    </button>
   </div>
   <div id="adminLiveMenu" class="settings-menu hidden">
     <div class="settings-caption">ADMIN</div>
@@ -241,6 +263,6 @@
 </nav>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=183"></script>
+<script src="app.js?v=185"></script>
 </body>
 </html>
