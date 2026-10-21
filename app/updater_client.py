@@ -27,6 +27,8 @@ from PySide6.QtWidgets import (
 
 LATEST_URL = "https://raw.githubusercontent.com/Paucki/SORG-GT-Data-Analyzer/main/update/latest.json"
 ACCOUNT_SERVER_URL = os.environ.get("SORG_ACCOUNT_SERVER_URL", "").strip().rstrip("/")
+SUPABASE_URL = "https://cdhfmhxhhtqqoetlferj.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_r9xkC56K3zezl30297f1qQ_fsz6ztfl"
 
 
 @dataclass
@@ -36,6 +38,8 @@ class UserSession:
     role: str = "user"
     channel: str = "stable"
     token: str = ""
+    user_id: str = ""
+    team_id: str = ""
 
 
 class LoginDialog(QDialog):
@@ -156,11 +160,11 @@ class LoginDialog(QDialog):
         card_layout.addWidget(subtitle)
         card_layout.addSpacing(10)
 
-        user_label = QLabel("Benutzername")
+        user_label = QLabel("E-Mail")
         user_label.setObjectName("subtle")
         card_layout.addWidget(user_label)
         self.username = QLineEdit()
-        self.username.setPlaceholderText("Benutzername eingeben")
+        self.username.setPlaceholderText("E-Mail-Adresse eingeben")
         self.username.setClearButtonEnabled(True)
         card_layout.addWidget(self.username)
 
@@ -187,7 +191,7 @@ class LoginDialog(QDialog):
         self.password.returnPressed.connect(self.try_login)
         card_layout.addWidget(self.password)
 
-        self.remember_user = QCheckBox("Benutzername auf diesem PC merken")
+        self.remember_user = QCheckBox("E-Mail auf diesem PC merken")
         card_layout.addWidget(self.remember_user)
 
         self.status = QLabel("")
@@ -215,7 +219,7 @@ class LoginDialog(QDialog):
         outer.addWidget(card)
         outer.addStretch()
 
-        footer = QLabel("SORG Rennsport · sichere lokale Anmeldung")
+        footer = QLabel("SORG Rennsport · gemeinsames Konto für PC & Mobile")
         footer.setObjectName("subtle")
         footer.setAlignment(Qt.AlignCenter)
         outer.addWidget(footer)
@@ -238,8 +242,8 @@ class LoginDialog(QDialog):
         return self.update_client.data_folder / "local_accounts.json"
 
     def _refresh_mode(self):
-        if ACCOUNT_SERVER_URL:
-            self.status.setText("Online-Anmeldung aktiv")
+        if ACCOUNT_SERVER_URL or SUPABASE_URL:
+            self.status.setText("Online-Anmeldung · PC & Mobile")
             self.setup_button.setVisible(False)
             return
         if self.account_file.exists():
@@ -300,7 +304,86 @@ class LoginDialog(QDialog):
             )
         raise RuntimeError("Benutzername oder Passwort ist falsch.")
 
+    def _supabase_request(self, path: str, *, method="GET", body=None, token=""):
+        headers = {
+            "apikey": SUPABASE_PUBLISHABLE_KEY,
+            "Content-Type": "application/json",
+            "User-Agent": "SORG-GT-Data-Analyzer",
+        }
+        if token:
+            headers["Authorization"] = "Bearer " + token
+        data = None if body is None else json.dumps(body).encode("utf-8")
+        request = urllib.request.Request(
+            SUPABASE_URL + path,
+            data=data,
+            headers=headers,
+            method=method,
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=12) as response:
+                raw = response.read().decode("utf-8")
+                return json.loads(raw) if raw else None
+        except urllib.error.HTTPError as error:
+            try:
+                detail = json.loads(error.read().decode("utf-8"))
+                message = detail.get("msg") or detail.get("message") or detail.get("error_description") or str(detail)
+            except Exception:
+                message = str(error)
+            raise RuntimeError(message) from error
+
+    def _supabase_login(self, email: str, password: str) -> UserSession:
+        data = self._supabase_request(
+            "/auth/v1/token?grant_type=password",
+            method="POST",
+            body={"email": email, "password": password},
+        )
+        token = data.get("access_token", "")
+        user = data.get("user") or {}
+        user_id = user.get("id", "")
+        display_name = (
+            (user.get("user_metadata") or {}).get("display_name")
+            or email.split("@", 1)[0]
+        )
+        role = "user"
+        team_id = ""
+
+        if token and user_id:
+            try:
+                profiles = self._supabase_request(
+                    f"/rest/v1/profiles?id=eq.{user_id}&select=display_name,role",
+                    token=token,
+                ) or []
+                if profiles:
+                    display_name = profiles[0].get("display_name") or display_name
+                    role = profiles[0].get("role") or role
+            except Exception:
+                pass
+
+            try:
+                memberships = self._supabase_request(
+                    f"/rest/v1/team_members?user_id=eq.{user_id}&select=team_id,role&limit=1",
+                    token=token,
+                ) or []
+                if memberships:
+                    team_id = memberships[0].get("team_id", "")
+                    role = memberships[0].get("role") or role
+            except Exception:
+                pass
+
+        return UserSession(
+            username=email,
+            display_name=display_name,
+            role=role,
+            channel="stable",
+            token=token,
+            user_id=user_id,
+            team_id=team_id,
+        )
+
     def _online_login(self, username: str, password: str) -> UserSession:
+        if SUPABASE_URL:
+            return self._supabase_login(username, password)
+
         body = json.dumps({
             "username": username,
             "password": password,
@@ -334,11 +417,11 @@ class LoginDialog(QDialog):
         username = self.username.text().strip()
         password = self.password.text()
         if not username or not password:
-            self.status.setText("Bitte Benutzername und Passwort eingeben.")
+            self.status.setText("Bitte E-Mail und Passwort eingeben.")
             return
         self.login_button.setEnabled(False)
         try:
-            session = self._online_login(username, password) if ACCOUNT_SERVER_URL else self._local_login(username, password)
+            session = self._online_login(username, password) if (ACCOUNT_SERVER_URL or SUPABASE_URL) else self._local_login(username, password)
         except Exception as error:
             self.status.setText(str(error))
             self.login_button.setEnabled(True)
