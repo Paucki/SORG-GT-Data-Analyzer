@@ -17,14 +17,14 @@
   <div class="splash-glow"></div>
   <div class="splash-brand">SORG <span>GT</span></div>
   <div class="splash-sub">NÜRBURGRING</div>
-  <svg class="spa-stage" viewBox="0 0 420 300" aria-label="Rennwagen auf Spa-Francorchamps">
+  <svg class="spa-stage" viewBox="0 0 420 300" aria-label="Rennwagen auf der Nürburgring Nordschleife">
     <defs>
       <filter id="carGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      <path id="spaPath" d="M58 224 C38 180,72 150,106 132 C138 114,133 80,170 58 C205 37,244 62,259 96 C275 132,312 117,342 137 C375 158,390 198,367 229 C344 260,302 255,278 278 C251 304,211 292,188 264 C163 234,134 247,106 258 C86 266,67 251,58 224 Z"/>
+      <path id="nordschleifePath" d="M55 220 C38 194,41 163,63 145 C87 126,117 137,128 111 C141 79,177 66,202 83 C223 98,220 128,246 139 C272 150,287 124,313 129 C344 135,359 163,350 188 C341 212,315 224,318 248 C322 276,351 281,365 303 C378 323,362 343,337 341 C312 339,298 318,276 323 C253 328,247 351,224 350 C198 349,188 325,164 326 C142 327,132 349,109 347 C87 345,75 326,81 306 C87 286,110 275,102 254 C95 235,69 236,55 220 Z"/>
     </defs>
-    <use href="#spaPath" class="spa-track-shadow"/>
-    <use href="#spaPath" class="spa-track"/>
-    <text x="20" y="284" class="spa-caption">NORDSCHLEIFE · NÜRBURGRING</text>
+    <use href="#nordschleifePath" class="spa-track-shadow"/>
+    <use href="#nordschleifePath" class="spa-track"/>
+    <text x="20" y="284" class="spa-caption">NÜRBURGRING · NORDSCHLEIFE</text>
     <g class="race-car" filter="url(#carGlow)">
       <rect x="-14" y="-6" width="28" height="12" rx="4"/>
       <rect x="-7" y="-10" width="14" height="7" rx="3" class="car-cabin"/>
@@ -32,7 +32,7 @@
       <rect x="11" y="-8" width="4" height="4" rx="1" class="car-wheel"/>
       <rect x="-15" y="4" width="4" height="4" rx="1" class="car-wheel"/>
       <rect x="11" y="4" width="4" height="4" rx="1" class="car-wheel"/>
-      <animateMotion dur="2.8s" repeatCount="indefinite" rotate="auto"><mpath href="#spaPath"/></animateMotion>
+      <animateMotion dur="2.8s" repeatCount="indefinite" rotate="auto"><mpath href="#nordschleifePath"/></animateMotion>
     </g>
   </svg>
   <div class="splash-line"></div>
