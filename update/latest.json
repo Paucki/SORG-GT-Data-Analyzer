@@ -1,6 +1,6 @@
 {
-  "version": "1.6.4",
-  "url": "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.6.4/SORG_GT_Data_Analyzer_Setup.exe",
-  "sha256": "98191af7522d8174d6f48ed0df42d69ecd19100185ebd83f5b6a3dad5c2ad8fb",
-  "notes": "Modernes Anmeldefenster | vereinfachte Hauptnavigation | klarere Bedienung"
+  "version": "1.6.5",
+  "url": "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.6.5/SORG_GT_Data_Analyzer_Setup.exe",
+  "sha256": "8179e55dbe268a6ef2700645db0ed2a327fe0fb7230ef3a9410d2173834555c1",
+  "notes": "Gemeinsamer Supabase-Login für PC und Handy | Cloud-Synchronisierung der Kerndaten | gleiche Reifendaten auf PC und Mobile"
 }
