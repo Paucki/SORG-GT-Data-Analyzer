@@ -518,6 +518,10 @@ class UserAdminDialog(QDialog):
         add_btn.clicked.connect(self.create_user)
         buttons.addWidget(add_btn)
 
+        edit_btn = QPushButton("Person bearbeiten")
+        edit_btn.clicked.connect(self.edit_profile)
+        buttons.addWidget(edit_btn)
+
         pw_btn = QPushButton("Passwort setzen")
         pw_btn.clicked.connect(self.set_password)
         buttons.addWidget(pw_btn)
@@ -643,6 +647,52 @@ class UserAdminDialog(QDialog):
             self.refresh()
         except Exception as error:
             QMessageBox.critical(self, "Benutzer anlegen", str(error))
+
+    def edit_profile(self):
+        user = self._selected()
+        if not user:
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Person bearbeiten")
+        form = QFormLayout(dialog)
+        name = QLineEdit(user.get("display_name", ""))
+        username = QLineEdit(user.get("username", ""))
+        phone = QLineEdit(user.get("phone", ""))
+        residence = QLineEdit(user.get("residence", ""))
+        team_role = QComboBox()
+        roles = ["Reifen", "Mechaniker", "Car Chief", "Fahrer"]
+        team_role.addItems(roles)
+        current = user.get("team_role", "Mechaniker")
+        if current in roles:
+            team_role.setCurrentText(current)
+        form.addRow("Name", name)
+        form.addRow("Benutzername", username)
+        form.addRow("Telefon", phone)
+        form.addRow("Wohnort", residence)
+        form.addRow("Funktion", team_role)
+        row = QHBoxLayout()
+        ok = QPushButton("Speichern")
+        cancel = QPushButton("Abbrechen")
+        row.addWidget(ok)
+        row.addWidget(cancel)
+        form.addRow(row)
+        ok.clicked.connect(dialog.accept)
+        cancel.clicked.connect(dialog.reject)
+        if dialog.exec() != QDialog.Accepted:
+            return
+        try:
+            self._call({
+                "action": "update_profile",
+                "user_id": user["id"],
+                "display_name": name.text().strip(),
+                "username": username.text().strip(),
+                "phone": phone.text().strip(),
+                "residence": residence.text().strip(),
+                "team_role": team_role.currentText(),
+            })
+            self.refresh()
+        except Exception as error:
+            QMessageBox.critical(self, "Person bearbeiten", str(error))
 
     def set_password(self):
         user = self._selected()
