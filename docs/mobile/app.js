@@ -3,7 +3,7 @@ const SUPABASE_KEY='sb_publishable_r9xkC56K3zezl30297f1qQ_fsz6ztfl';
 const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let teamId='',currentUser=null,currentRole='user';
-let cloud={vehicles:[],drivers:[],events:[],sessions:[],sets:[],measurements:[]};
+let cloud={tracks:[],vehicles:[],drivers:[],events:[],sessions:[],sets:[],measurements:[]};
 let recoveryMode=false;
 const startedAt=Date.now();
 
@@ -13,6 +13,7 @@ function go(name){
   $$('.view').forEach(v=>v.classList.toggle('active',v.dataset.view===name));
   $$('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
   if(name==='measure')populateMeasure();
+  if(name==='setup')populateSetup();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 $$('[data-tab]').forEach(b=>b.onclick=()=>go(b.dataset.tab));
@@ -50,7 +51,8 @@ function render(){
 async function loadCloud(){
   if(!teamId)return;
   $('#cloudInfo').textContent='Synchronisierung läuft …';
-  const [v,d,e,s,t,m]=await Promise.all([
+  const [tr,v,d,e,s,t,m]=await Promise.all([
+    supa.from('tracks').select('*').eq('team_id',teamId).order('name'),
     supa.from('vehicles').select('*').eq('team_id',teamId).order('name'),
     supa.from('drivers').select('*').eq('team_id',teamId).order('name'),
     supa.from('race_weekends').select('*').eq('team_id',teamId).order('start_date',{ascending:false}),
@@ -58,9 +60,11 @@ async function loadCloud(){
     supa.from('tyre_sets').select('*').eq('team_id',teamId).order('set_number'),
     supa.from('tyre_measurements').select('*').eq('team_id',teamId).order('updated_at',{ascending:false})
   ]);
-  const err=[v,d,e,s,t,m].find(x=>x.error)?.error;
+  const err=[tr,v,d,e,s,t,m].find(x=>x.error)?.error;
   if(err){$('#cloudInfo').textContent='Cloud-Fehler: '+err.message;return}
-  cloud={vehicles:v.data||[],drivers:d.data||[],events:e.data||[],sessions:s.data||[],sets:t.data||[],measurements:m.data||[]};render();
+  cloud={tracks:tr.data||[],vehicles:v.data||[],drivers:d.data||[],events:e.data||[],sessions:s.data||[],sets:t.data||[],measurements:m.data||[]};
+  render();
+  if($('.view[data-view="setup"]')?.classList.contains('active'))populateSetup();
 }
 async function initAccount(session,reveal=true){
   currentUser=session?.user||null;
@@ -161,6 +165,86 @@ $('#pressureForm').onsubmit=async e=>{
     if(result.error){$('#saveStatus').textContent='Speichern fehlgeschlagen: '+result.error.message;return}
   }
   $('#note').value='';$('#saveStatus').textContent='Gespeichert.';await loadCloud();go('home');
+};
+
+
+function options(rows,label,empty='Noch keine Daten'){
+  return rows.length?rows.map(x=>'<option value="'+x.id+'">'+esc(label(x))+'</option>').join(''):'<option value="">'+empty+'</option>';
+}
+function populateSetup(){
+  if(currentRole!=='admin')return;
+  const set=(id,html)=>{const el=$(id);if(el)el.innerHTML=html};
+  set('#setupEventTrack',options(cloud.tracks,x=>x.name,'Noch keine Strecke'));
+  set('#setupSessionEvent',options(cloud.events,x=>x.name,'Noch kein Rennwochenende'));
+  set('#setupSessionCar',options(cloud.vehicles,x=>vehicleName(x.id),'Noch kein Fahrzeug'));
+  set('#setupSessionDriver','<option value="">Ohne Fahrer</option>'+options(cloud.drivers,x=>driverName(x.id),'').replace('<option value=""></option>',''));
+  set('#setupTyreSession',options(cloud.sessions,x=>eventName(x.race_weekend_id)+' · '+sessionName(x),'Noch keine Session'));
+}
+function setupStatus(msg,ok=false){
+  const el=$('#setupStatus');if(!el)return;el.textContent=msg;el.style.color=ok?'#8ee3b4':'';
+}
+async function insertShared(table,payload){
+  const result=await supa.from(table).insert({...payload,team_id:teamId});
+  if(result.error)throw result.error;
+}
+$('#createTrackBtn').onclick=async()=>{
+  const name=$('#setupTrackName').value.trim();
+  if(!name){setupStatus('Bitte einen Streckennamen eingeben.');return}
+  try{
+    setupStatus('Strecke wird gespeichert …');
+    await insertShared('tracks',{id:crypto.randomUUID(),name,country:$('#setupTrackCountry').value.trim(),length_km:Number($('#setupTrackLength').value||0),corners:Number($('#setupTrackCorners').value||0)});
+    await loadCloud();setupStatus('Strecke gespeichert. Sie steht jetzt PC und Handy zur Verfügung.',true);
+  }catch(e){setupStatus('Strecke konnte nicht gespeichert werden: '+e.message)}
+};
+$('#createCarBtn').onclick=async()=>{
+  const manufacturer=$('#setupCarManufacturer').value.trim(),model=$('#setupCarModel').value.trim();
+  if(!manufacturer&&!model){setupStatus('Bitte Hersteller oder Modell eingeben.');return}
+  try{
+    setupStatus('Fahrzeug wird gespeichert …');
+    await insertShared('vehicles',{id:crypto.randomUUID(),name:[manufacturer,model].filter(Boolean).join(' '),manufacturer,model,start_number:$('#setupCarNumber').value.trim(),vehicle_class:$('#setupCarClass').value.trim()});
+    await loadCloud();setupStatus('Fahrzeug gespeichert.',true);
+  }catch(e){setupStatus('Fahrzeug konnte nicht gespeichert werden: '+e.message)}
+};
+$('#createDriverBtn').onclick=async()=>{
+  const first_name=$('#setupDriverFirst').value.trim(),last_name=$('#setupDriverLast').value.trim();
+  if(!first_name&&!last_name){setupStatus('Bitte einen Fahrernamen eingeben.');return}
+  try{
+    setupStatus('Fahrer wird gespeichert …');
+    await insertShared('drivers',{id:crypto.randomUUID(),name:[first_name,last_name].filter(Boolean).join(' '),first_name,last_name,race_number:$('#setupDriverNumber').value.trim(),number:$('#setupDriverNumber').value.trim(),licence_class:$('#setupDriverLicence').value.trim()});
+    await loadCloud();setupStatus('Fahrer gespeichert.',true);
+  }catch(e){setupStatus('Fahrer konnte nicht gespeichert werden: '+e.message)}
+};
+$('#createEventBtn').onclick=async()=>{
+  const name=$('#setupEventName').value.trim(),track_id=$('#setupEventTrack').value;
+  if(!name||!track_id){setupStatus('Rennwochenende und Strecke sind erforderlich.');return}
+  try{
+    setupStatus('Rennwochenende wird gespeichert …');
+    await insertShared('race_weekends',{id:crypto.randomUUID(),name,track_id,start_date:$('#setupEventStart').value||null,end_date:$('#setupEventEnd').value||null,championship:$('#setupEventChampionship').value.trim(),event_type:$('#setupEventType').value.trim()});
+    await loadCloud();setupStatus('Rennwochenende gespeichert.',true);
+  }catch(e){setupStatus('Rennwochenende konnte nicht gespeichert werden: '+e.message)}
+};
+$('#createSessionBtn').onclick=async()=>{
+  const race_weekend_id=$('#setupSessionEvent').value,vehicle_id=$('#setupSessionCar').value;
+  if(!race_weekend_id||!vehicle_id){setupStatus('Rennwochenende und Fahrzeug sind erforderlich.');return}
+  const rawDate=$('#setupSessionDate').value;
+  const measured_at=rawDate?new Date(rawDate).toISOString():new Date().toISOString();
+  try{
+    setupStatus('Session wird gespeichert …');
+    await insertShared('sessions',{id:crypto.randomUUID(),race_weekend_id,vehicle_id,driver_id:$('#setupSessionDriver').value||null,session_type:$('#setupSessionType').value.trim()||'Session',measured_at,session_date:measured_at});
+    await loadCloud();setupStatus('Session gespeichert.',true);
+  }catch(e){setupStatus('Session konnte nicht gespeichert werden: '+e.message)}
+};
+$('#createTyreSetBtn').onclick=async()=>{
+  const session=cloud.sessions.find(x=>x.id===$('#setupTyreSession').value);
+  if(!session){setupStatus('Bitte zuerst eine Session auswählen.');return}
+  const id=crypto.randomUUID();
+  try{
+    setupStatus('Reifensatz wird gespeichert …');
+    await insertShared('tyre_sets',{id,race_weekend_id:session.race_weekend_id,vehicle_id:session.vehicle_id,set_number:Number($('#setupTyreNumber').value||1),compound:$('#setupTyreCompound').value.trim()||'Unbekannt',condition:'gebraucht',tyre_type:'Slick',laps:0,heat_cycles:0});
+    const patch=await supa.from('sessions').update({tyre_set_id:id,updated_at:new Date().toISOString()}).eq('id',session.id);
+    if(patch.error)throw patch.error;
+    await loadCloud();setupStatus('Reifensatz gespeichert und der Session zugeordnet.',true);
+  }catch(e){setupStatus('Reifensatz konnte nicht gespeichert werden: '+e.message)}
 };
 
 async function adminCall(payload){const {data,error}=await supa.functions.invoke('admin-users',{body:payload});if(error)throw new Error(error.message||'Admin-Funktion fehlgeschlagen');if(data?.error)throw new Error(data.error);return data||{}}
