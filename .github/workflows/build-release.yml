@@ -4,9 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - ".github/workflows/build-release.yml"
-      - "bootstrap/**"
-      - "app/**"
+      - "app/version.py"
 
 permissions:
   contents: write
@@ -20,29 +18,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Reconstruct source
+      - name: Read version
+        id: version
         shell: pwsh
         run: |
-          $parts = Get-ChildItem bootstrap\part*.b64 | Sort-Object Name
-          $b64 = ($parts | ForEach-Object { Get-Content $_.FullName -Raw }) -join ""
-          [IO.File]::WriteAllBytes("source.zip", [Convert]::FromBase64String($b64))
-          if (Test-Path app) { Remove-Item app -Recurse -Force }
-          Expand-Archive source.zip -DestinationPath app -Force
-
-      - name: Recover image assets from V1.6.1
-        shell: pwsh
-        run: |
-          $url = "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.6.1/SORG_GT_Data_Analyzer_Setup.exe"
-          $setup = Join-Path $env:RUNNER_TEMP "v161_setup.exe"
-          $old = Join-Path $env:RUNNER_TEMP "sorg_old"
-          Invoke-WebRequest -Uri $url -OutFile $setup
-          Start-Process -FilePath $setup -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/DIR=$old" -Wait
-          $names = @("motorsport_hero.jpg","motorsport_preview.jpg","motorsport_sidebar.jpg","sorg_full_logo.jpg","sorg_gt.ico")
-          foreach ($name in $names) {
-            $found = Get-ChildItem $old -Recurse -File -Filter $name | Select-Object -First 1
-            if (-not $found) { throw "Asset not found in V1.6.1 installer: $name" }
-            Copy-Item $found.FullName (Join-Path "app" $name) -Force
-          }
+          $text = Get-Content app\version.py -Raw
+          if ($text -notmatch 'APP_VERSION\s*=\s*["'']([^"'']+)["'']') { throw "APP_VERSION not found." }
+          $version = $Matches[1]
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=V$version" >> $env:GITHUB_OUTPUT
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -56,6 +40,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r app\requirements.txt
+
+      - name: Syntax check
+        shell: pwsh
+        working-directory: app
+        run: python -m py_compile main.py updater_client.py database.py dialogs.py report_generator.py version.py
 
       - name: Build application
         shell: pwsh
@@ -72,32 +61,35 @@ jobs:
       - name: Build installer
         shell: pwsh
         working-directory: app
-        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss'
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DMyAppVersion=${{ steps.version.outputs.version }}" installer.iss
 
-      - name: Prepare update metadata and source repository
+      - name: Create update metadata
         shell: pwsh
         run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $tag = "${{ steps.version.outputs.tag }}"
           $installer = "app\release\SORG_GT_Data_Analyzer_Setup.exe"
           if (-not (Test-Path $installer)) { throw "Installer was not created." }
           $sha = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLower()
           $latest = [ordered]@{
-            version = "1.6.2"
-            url = "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.6.2/SORG_GT_Data_Analyzer_Setup.exe"
+            version = $version
+            url = "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/$tag/SORG_GT_Data_Analyzer_Setup.exe"
             sha256 = $sha
-            notes = "Update-Suche im Menü wiederhergestellt | automatischer Update-Check beim Start | GitHub Auto-Build eingerichtet"
+            notes = "Modernes Anmeldefenster | vereinfachte Hauptnavigation | klarere Bedienung"
           }
           $latest | ConvertTo-Json | Set-Content update\latest.json -Encoding utf8
-          Remove-Item source.zip -Force
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app update/latest.json
-          git rm -r bootstrap
-          git commit -m "Publish V1.6.2 source and update metadata [skip ci]"
+          git add update/latest.json
+          git commit -m "Update metadata for $tag [skip ci]"
           git push
 
-      - name: Publish GitHub Release V1.6.2
+      - name: Publish GitHub Release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create V1.6.2 "app\release\SORG_GT_Data_Analyzer_Setup.exe" --title "SORG GT Data Analyzer V1.6.2" --notes "Update-Suche im Menü wiederhergestellt. Automatische Update-Prüfung beim Start bleibt aktiv. Build und Release laufen künftig über GitHub."
+          $version = "${{ steps.version.outputs.version }}"
+          $tag = "${{ steps.version.outputs.tag }}"
+          gh release create $tag "app\release\SORG_GT_Data_Analyzer_Setup.exe" --title "SORG GT Data Analyzer V$version" --notes "Modernes Anmeldefenster und vereinfachte Bedienung. Automatische Updates bleiben aktiv."
