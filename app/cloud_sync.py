@@ -165,12 +165,121 @@ class CloudSync:
             return
         self._busy = True
         try:
+            # Löschungen immer zuerst übertragen, damit entfernte Datensätze
+            # nicht direkt danach wieder als normale Daten hochgeladen werden.
+            self._push_local_deletions()
+            self._pull_tombstones()
             self._push_core()
             self._pull_core()
             self._pull_details()
             self._pull_measurements()
+            self._pull_tombstones()
         finally:
             self._busy = False
+
+    LOCAL_TO_REMOTE_DELETE = {
+        "cars": "vehicles",
+        "drivers": "drivers",
+        "tracks": "tracks",
+        "events": "race_weekends",
+        "sessions": "sessions",
+        "tyre_sets": "tyre_sets",
+        "tyre_measurements": "tyre_measurements",
+        "session_changes": "session_changes",
+        "session_setup_entries": "session_setup_entries",
+        "session_media": "session_media",
+        "driver_track_pressure_targets": "pressure_setups",
+        "pressure_recommendation_log": "pressure_recommendation_log",
+        "tyre_notes": "tyre_notes",
+    }
+    REMOTE_TO_LOCAL_DELETE = {value: key for key, value in LOCAL_TO_REMOTE_DELETE.items()}
+
+    def _push_local_deletions(self):
+        try:
+            pending = list(
+                self.db.all(
+                    "SELECT local_table,local_id FROM sync_deletions ORDER BY deleted_at,id"
+                )
+            )
+        except Exception:
+            pending = list(
+                self.db.all(
+                    "SELECT local_table,local_id FROM sync_deletions ORDER BY deleted_at"
+                )
+            )
+        for row in pending:
+            local_table = str(row["local_table"])
+            local_id = int(row["local_id"])
+            remote_table = self.LOCAL_TO_REMOTE_DELETE.get(local_table)
+            if not remote_table:
+                self.db.execute(
+                    "DELETE FROM sync_deletions WHERE local_table=? AND local_id=?",
+                    (local_table, local_id),
+                )
+                continue
+            query = urllib.parse.urlencode({
+                "team_id": f"eq.{self.team_id}",
+                "legacy_id": f"eq.{local_id}",
+            })
+            self._request(
+                remote_table,
+                method="DELETE",
+                query=query,
+                prefer="return=minimal",
+            )
+            self.db.execute(
+                "DELETE FROM sync_deletions WHERE local_table=? AND local_id=?",
+                (local_table, local_id),
+            )
+
+    def _pull_tombstones(self):
+        rows = self._request(
+            "sync_tombstones",
+            query=urllib.parse.urlencode({
+                "team_id": f"eq.{self.team_id}",
+                "select": "table_name,legacy_id,deleted_at",
+                "order": "deleted_at.asc",
+            }),
+        ) or []
+        # Kindtabellen zuerst löschen, Eltern zuletzt.
+        priority = {
+            "tyre_measurements": 0,
+            "pressure_recommendation_log": 0,
+            "tyre_notes": 0,
+            "session_changes": 0,
+            "session_setup_entries": 0,
+            "session_media": 0,
+            "pressure_setups": 0,
+            "tyre_sets": 1,
+            "sessions": 2,
+            "race_weekends": 3,
+            "drivers": 4,
+            "vehicles": 4,
+            "tracks": 4,
+        }
+        rows.sort(key=lambda row: priority.get(str(row.get("table_name")), 9))
+        for row in rows:
+            remote_table = str(row.get("table_name") or "")
+            legacy = row.get("legacy_id")
+            local_table = self.REMOTE_TO_LOCAL_DELETE.get(remote_table)
+            if not local_table or legacy is None:
+                continue
+            try:
+                self.db.execute(
+                    f"DELETE FROM {local_table} WHERE id = ?",
+                    (int(legacy),),
+                )
+            except Exception:
+                continue
+            # Das lokale DELETE erzeugt absichtlich wieder einen Queue-Eintrag.
+            # Da die Cloud-Löschung bereits existiert, diesen sofort entfernen.
+            try:
+                self.db.execute(
+                    "DELETE FROM sync_deletions WHERE local_table=? AND local_id=?",
+                    (local_table, int(legacy)),
+                )
+            except Exception:
+                pass
 
     def _patch_legacy_id(self, table: str, remote_id: str, legacy_id: int) -> None:
         query = urllib.parse.urlencode({"id": f"eq.{remote_id}"})
