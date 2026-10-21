@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07090c">
+<title>SORG GT · Live Update-Status</title>
+<style>
+:root{--bg:#07090c;--card:#11161c;--line:#29313a;--text:#f6f7f9;--muted:#909aa5;--red:#e21b2d;--green:#35c780;--amber:#e8b34b}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+body{min-height:100vh;background:radial-gradient(circle at 80% 0,rgba(226,27,45,.15),transparent 30%),#07090c}
+main{max-width:760px;margin:auto;padding:28px 16px 48px}.brand{font-size:24px;font-weight:950;letter-spacing:.12em}.brand span{color:var(--red)}
+.sub{color:var(--muted);font-size:10px;letter-spacing:.28em;margin-top:4px}.gate,.panel{margin-top:22px;background:linear-gradient(180deg,#141920,#0f1318);border:1px solid var(--line);border-radius:18px;padding:18px}
+.hidden{display:none!important}.eyebrow{color:var(--red);font-size:10px;font-weight:900;letter-spacing:.16em}.title{font-size:30px;font-weight:900;margin:6px 0 4px;letter-spacing:-.03em}
+.muted{color:var(--muted);font-size:13px;line-height:1.5}.status-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}
+.card{background:#0b0f13;border:1px solid #252c34;border-radius:14px;padding:14px}.label{color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.1em}.value{font-size:17px;font-weight:900;margin-top:5px;word-break:break-word}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;background:var(--muted)}.dot.ok{background:var(--green)}.dot.run{background:var(--amber)}.dot.fail{background:var(--red)}
+.progress{height:7px;border-radius:99px;background:#20262d;margin-top:14px;overflow:hidden}.progress i{display:block;height:100%;width:30%;background:var(--red);animation:load 1.4s linear infinite}
+@keyframes load{from{transform:translateX(-120%)}to{transform:translateX(420%)}}button,a.action{display:block;width:100%;margin-top:12px;border:1px solid #343d47;border-radius:12px;background:#131820;color:white;padding:12px 14px;text-align:center;text-decoration:none;font-weight:900}
+button{cursor:pointer}.error{color:#f2a1aa;font-size:12px;margin-top:10px}.stamp{color:#6f7984;font-size:10px;margin-top:12px}
+@media(max-width:520px){.status-grid{grid-template-columns:1fr}.title{font-size:27px}}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">SORG <span>GT</span></div>
+  <div class="sub">ADMIN · LIVE UPDATE STATUS</div>
+
+  <section id="gate" class="gate">
+    <div class="eyebrow">ZUGRIFFSPRÜFUNG</div>
+    <div class="title">Admin wird geprüft …</div>
+    <div class="muted">Diese Ansicht ist ausschließlich für Administratoren des SORG-Teams freigeschaltet.</div>
+  </section>
+
+  <section id="denied" class="gate hidden">
+    <div class="eyebrow">KEIN ZUGRIFF</div>
+    <div class="title">Nur für Admins</div>
+    <div class="muted">Melde dich zuerst in der SORG GT Mobile-App mit einem Admin-Konto an.</div>
+    <a class="action" href="./mobile/">ZUR APP</a>
+  </section>
+
+  <section id="status" class="panel hidden">
+    <div class="eyebrow">LIVE</div>
+    <div class="title">Update-Status</div>
+    <div class="muted">Die Ansicht aktualisiert sich automatisch. Build-Status wird etwa einmal pro Minute neu geprüft.</div>
+    <div class="status-grid">
+      <div class="card"><div class="label">AKTUELLE QUELLCODE-VERSION</div><div id="sourceVersion" class="value">–</div></div>
+      <div class="card"><div class="label">VERÖFFENTLICHTER INSTALLER</div><div id="releaseVersion" class="value">–</div></div>
+      <div class="card"><div class="label">BUILD</div><div id="buildState" class="value"><span class="dot"></span>Wird geladen …</div></div>
+      <div class="card"><div class="label">UPLOAD / RELEASE</div><div id="releaseState" class="value"><span class="dot"></span>Wird geprüft …</div></div>
+    </div>
+    <div id="runningBar" class="progress hidden"><i></i></div>
+    <div id="details" class="muted" style="margin-top:14px"></div>
+    <div id="err" class="error"></div>
+    <div id="stamp" class="stamp"></div>
+    <button id="refreshBtn" type="button">JETZT AKTUALISIEREN</button>
+    <a class="action" href="https://github.com/Paucki/SORG-GT-Data-Analyzer/actions" target="_blank" rel="noopener">GITHUB ACTIONS ÖFFNEN</a>
+  </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://cdhfmhxhhtqqoetlferj.supabase.co';
+const SUPABASE_KEY='sb_publishable_r9xkC56K3zezl30297f1qQ_fsz6ztfl';
+const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const $=s=>document.querySelector(s);
+let timer=null;
+
+function setState(el,text,kind){
+  el.innerHTML='<span class="dot '+kind+'"></span>'+text;
+}
+async function checkAdmin(){
+  const {data}=await supa.auth.getSession();
+  const user=data?.session?.user;
+  if(!user)return false;
+  const q=await supa.from('team_members').select('role').eq('user_id',user.id).limit(1);
+  return !q.error && q.data?.[0]?.role==='admin';
+}
+async function refreshStatus(){
+  $('#err').textContent='';
+  try{
+    const [versionRes,latestRes,runRes]=await Promise.all([
+      fetch('https://raw.githubusercontent.com/Paucki/SORG-GT-Data-Analyzer/main/app/version.py',{cache:'no-store'}),
+      fetch('./update/latest.json?ts='+Date.now(),{cache:'no-store'}),
+      fetch('https://api.github.com/repos/Paucki/SORG-GT-Data-Analyzer/actions/workflows/build-release.yml/runs?branch=main&per_page=1',{headers:{'Accept':'application/vnd.github+json'}})
+    ]);
+    const versionText=await versionRes.text();
+    const match=versionText.match(/APP_VERSION\s*=\s*["']([^"']+)["']/);
+    const source=match?match[1]:'Unbekannt';
+    $('#sourceVersion').textContent='V'+source;
+
+    let released='Noch keiner';
+    let latest=null;
+    if(latestRes.ok){
+      latest=await latestRes.json();
+      released=latest?.version?'V'+latest.version:'Noch keiner';
+    }
+    $('#releaseVersion').textContent=released;
+
+    const runs=await runRes.json();
+    const run=runs?.workflow_runs?.[0];
+    if(!run){
+      setState($('#buildState'),'Kein Build gefunden','fail');
+      $('#runningBar').classList.add('hidden');
+    }else if(run.status!=='completed'){
+      setState($('#buildState'),'Build läuft','run');
+      $('#runningBar').classList.remove('hidden');
+    }else if(run.conclusion==='success'){
+      setState($('#buildState'),'Erfolgreich','ok');
+      $('#runningBar').classList.add('hidden');
+    }else{
+      setState($('#buildState'),'Fehler','fail');
+      $('#runningBar').classList.add('hidden');
+    }
+
+    const isCurrent=latest?.version===source;
+    if(isCurrent && run?.conclusion==='success'){
+      setState($('#releaseState'),'Installer verfügbar','ok');
+    }else if(run?.status!=='completed'){
+      setState($('#releaseState'),'Noch nicht hochgeladen','run');
+    }else if(run?.conclusion==='failure'){
+      setState($('#releaseState'),'Nicht veröffentlicht','fail');
+    }else{
+      setState($('#releaseState'),'Warte auf Release','run');
+    }
+
+    const created=run?.created_at?new Date(run.created_at).toLocaleString('de-DE'):'–';
+    $('#details').textContent='Letzter Build: '+created+(run?.display_title?' · '+run.display_title:'');
+    $('#stamp').textContent='Zuletzt geprüft: '+new Date().toLocaleTimeString('de-DE');
+  }catch(e){
+    $('#err').textContent='Status konnte nicht geladen werden: '+e.message;
+  }
+}
+(async()=>{
+  const admin=await checkAdmin();
+  $('#gate').classList.add('hidden');
+  if(!admin){$('#denied').classList.remove('hidden');return}
+  $('#status').classList.remove('hidden');
+  $('#refreshBtn').addEventListener('click',refreshStatus);
+  await refreshStatus();
+  timer=setInterval(refreshStatus,60000);
+})();
+</script>
+</body>
+</html>
