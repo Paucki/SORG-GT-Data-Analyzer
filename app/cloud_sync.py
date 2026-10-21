@@ -857,6 +857,20 @@ class CloudSync:
                         if old is None or local_time >= remote_time:
                             send.append(rec)
                 if table == "session_drivers":
+                    # Beziehungstabelle vollständig pro sichtbarer Session
+                    # ersetzen, damit auch entfernte Fahrer global verschwinden.
+                    visible_session_ids = sorted(set(session_map.values()))
+                    for remote_session_id in visible_session_ids:
+                        query = urllib.parse.urlencode({
+                            "team_id": f"eq.{self.team_id}",
+                            "session_id": f"eq.{remote_session_id}",
+                        })
+                        self._request(
+                            table,
+                            method="DELETE",
+                            query=query,
+                            prefer="return=minimal",
+                        )
                     if send:
                         self._request(
                             table,
