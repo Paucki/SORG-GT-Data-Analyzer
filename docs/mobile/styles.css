@@ -91,3 +91,9 @@ input,select,textarea{background:#0a0d11;border-color:#303842;color:#f7f8fa}.inp
 .shared-list{display:flex;flex-direction:column;gap:7px;margin-top:8px}
 .shared-row{padding:10px 12px;border:1px solid #2b323b;border-radius:11px;background:#0c1015;color:#edf1f5;font-size:14px;line-height:1.35}
 .shared-row+.shared-row{margin-top:0}
+
+/* V1.8.6 VEHICLE ASSIGNMENTS */
+.vehicleAssign{width:100%;margin-top:8px;padding:10px;border:1px solid #2b323b;border-radius:12px;background:#0b0f14}
+.vehicle-checks{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.vehicle-checks label{display:flex;align-items:center;gap:8px;color:#e7ebef;font-size:13px}
+.vehicle-checks input{width:18px;height:18px}
