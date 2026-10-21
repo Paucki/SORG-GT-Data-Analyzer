@@ -13,10 +13,30 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="app">
+<div id="loginScreen" class="login-screen">
+  <div class="login-wrap">
+    <div class="login-brand">SORG <span>GT</span></div>
+    <div class="login-sub">MOBILE</div>
+    <div class="login-card">
+      <div class="eyebrow">ANMELDUNG</div>
+      <h1>Willkommen zurück</h1>
+      <p>Mit demselben Konto wie am PC anmelden.</p>
+      <label>E-Mail
+        <input id="loginEmail" type="email" autocomplete="email" placeholder="name@team.de">
+      </label>
+      <label>Passwort
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort">
+      </label>
+      <div id="loginStatus" class="login-status"></div>
+      <button id="loginBtn" class="primary big">ANMELDEN</button>
+      <button id="signupBtn" class="ghost full">Konto anlegen</button>
+    </div>
+  </div>
+</div>
+<div id="app" class="hidden">
   <header class="topbar">
     <div><div class="brand">SORG <span>GT</span></div><div class="subtitle">MOBILE</div></div>
-    <div class="badge">LOKAL</div>
+    <button id="logoutBtn" class="badge logout-badge">ABMELDEN</button>
   </header>
 
   <main>
@@ -140,6 +160,7 @@
     <button data-tab="more">•••<span>Mehr</span></button>
   </nav>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 </body>
 </html>
