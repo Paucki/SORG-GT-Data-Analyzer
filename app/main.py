@@ -12,7 +12,7 @@ import base64
 from pathlib import Path
 from urllib.parse import quote
 
-from PySide6.QtCore import Qt, QUrl, QSize, QTimer
+from PySide6.QtCore import Qt, QUrl, QSize, QTimer, QEventLoop, QPointF, QRectF
 from PySide6.QtGui import (
     QAction,
     QFont,
@@ -20,6 +20,10 @@ from PySide6.QtGui import (
     QPixmap,
     QIcon,
     QPainter,
+    QPainterPath,
+    QColor,
+    QPen,
+    QBrush,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -4540,6 +4544,132 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
 
+class NuerburgringSplash(QWidget):
+    """Kurzer Desktop-Startbildschirm mit animiertem Rennwagen am Nürburgring."""
+
+    def __init__(self):
+        super().__init__(None, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+        self.setFixedSize(900, 520)
+        self.progress = 0.0
+        self._timer = QTimer(self)
+        self._timer.setInterval(16)
+        self._timer.timeout.connect(self._advance_car)
+
+        screen = QApplication.primaryScreen()
+        if screen is not None:
+            area = screen.availableGeometry()
+            self.move(
+                area.x() + (area.width() - self.width()) // 2,
+                area.y() + (area.height() - self.height()) // 2,
+            )
+
+    def start(self):
+        self.show()
+        self.raise_()
+        self._timer.start()
+
+    def _advance_car(self):
+        self.progress = (self.progress + 0.0036) % 1.0
+        self.update()
+
+    def _track_path(self) -> QPainterPath:
+        path = QPainterPath(QPointF(173, 379))
+        path.cubicTo(120, 334, 112, 265, 148, 213)
+        path.cubicTo(183, 162, 244, 170, 271, 127)
+        path.cubicTo(309, 68, 375, 76, 415, 111)
+        path.cubicTo(455, 145, 466, 189, 513, 176)
+        path.cubicTo(572, 160, 631, 109, 694, 136)
+        path.cubicTo(757, 164, 785, 228, 753, 280)
+        path.cubicTo(724, 326, 658, 323, 626, 363)
+        path.cubicTo(590, 408, 527, 429, 471, 405)
+        path.cubicTo(421, 383, 397, 337, 351, 350)
+        path.cubicTo(306, 363, 279, 411, 230, 416)
+        path.cubicTo(205, 418, 187, 401, 173, 379)
+        return path
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.fillRect(self.rect(), QColor("#06080b"))
+
+        painter.setBrush(QBrush(QColor(60, 10, 18, 150)))
+        painter.setPen(Qt.NoPen)
+        painter.drawEllipse(QRectF(500, 35, 390, 390))
+
+        painter.setPen(QColor("#ffffff"))
+        brand_font = QFont("Segoe UI", 30, QFont.Black)
+        brand_font.setLetterSpacing(QFont.AbsoluteSpacing, 2.5)
+        painter.setFont(brand_font)
+        painter.drawText(QRectF(54, 35, 350, 55), Qt.AlignLeft | Qt.AlignVCenter, "SORG")
+
+        painter.setPen(QColor("#e21b2d"))
+        gt_font = QFont("Segoe UI", 15, QFont.Black)
+        gt_font.setLetterSpacing(QFont.AbsoluteSpacing, 4.0)
+        painter.setFont(gt_font)
+        painter.drawText(QRectF(54, 82, 350, 36), Qt.AlignLeft | Qt.AlignVCenter, "GT DATA ANALYZER")
+
+        painter.setPen(QColor("#8e98a5"))
+        sub_font = QFont("Segoe UI", 10, QFont.Bold)
+        sub_font.setLetterSpacing(QFont.AbsoluteSpacing, 2.0)
+        painter.setFont(sub_font)
+        painter.drawText(QRectF(54, 120, 420, 28), Qt.AlignLeft | Qt.AlignVCenter, "NÜRBURGRING · RENNBETRIEB")
+
+        track = self._track_path()
+        painter.setPen(QPen(QColor(0, 0, 0, 180), 18, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawPath(track)
+        painter.setPen(QPen(QColor("#e6e9ed"), 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.drawPath(track)
+
+        start = track.pointAtPercent(0.0)
+        painter.setPen(QPen(QColor("#e21b2d"), 8, Qt.SolidLine, Qt.RoundCap))
+        painter.drawLine(QPointF(start.x() - 8, start.y() - 7), QPointF(start.x() + 8, start.y() + 7))
+
+        car = track.pointAtPercent(self.progress)
+        angle = -track.angleAtPercent(self.progress)
+        painter.save()
+        painter.translate(car)
+        painter.rotate(angle)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor("#e21b2d"))
+        painter.drawRoundedRect(QRectF(-17, -8, 34, 16), 5, 5)
+        painter.setBrush(QColor("#f3f5f7"))
+        painter.drawRoundedRect(QRectF(-7, -11, 14, 7), 3, 3)
+        painter.setBrush(QColor("#050607"))
+        painter.drawRoundedRect(QRectF(-15, -10, 6, 4), 1.5, 1.5)
+        painter.drawRoundedRect(QRectF(9, -10, 6, 4), 1.5, 1.5)
+        painter.drawRoundedRect(QRectF(-15, 6, 6, 4), 1.5, 1.5)
+        painter.drawRoundedRect(QRectF(9, 6, 6, 4), 1.5, 1.5)
+        painter.restore()
+
+        painter.setPen(QColor("#ffffff"))
+        title_font = QFont("Segoe UI", 22, QFont.Black)
+        painter.setFont(title_font)
+        painter.drawText(QRectF(54, 430, 530, 42), Qt.AlignLeft | Qt.AlignVCenter, "Willkommen im Rennwochenende")
+
+        painter.setPen(QColor("#838d99"))
+        status_font = QFont("Segoe UI", 10, QFont.DemiBold)
+        painter.setFont(status_font)
+        painter.drawText(QRectF(55, 473, 500, 24), Qt.AlignLeft | Qt.AlignVCenter, "Fahrzeug- und Teamdaten werden vorbereitet …")
+
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor("#222830"))
+        painter.drawRoundedRect(QRectF(615, 462, 225, 5), 2.5, 2.5)
+        painter.setBrush(QColor("#e21b2d"))
+        width = 225 * ((self.progress * 2.4) % 1.0)
+        painter.drawRoundedRect(QRectF(615, 462, width, 5), 2.5, 2.5)
+
+
+def show_nuerburgring_splash(duration_ms: int = 2300):
+    splash = NuerburgringSplash()
+    loop = QEventLoop()
+    QTimer.singleShot(duration_ms, loop.quit)
+    splash.start()
+    loop.exec()
+    splash._timer.stop()
+    splash.close()
+    QApplication.processEvents()
+
+
 def apply_style(application: QApplication) -> None:
     application.setFont(QFont("Segoe UI", 10))
     application.setStyleSheet(
@@ -5192,6 +5322,7 @@ def main() -> int:
         app_icon = QIcon()
 
     apply_style(application)
+    show_nuerburgring_splash()
 
     try:
         update_client = UpdateClient(
