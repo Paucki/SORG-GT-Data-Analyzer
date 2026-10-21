@@ -17,24 +17,11 @@
   <div class="splash-glow"></div>
   <div class="splash-brand">SORG <span>GT</span></div>
   <div class="splash-sub">NÜRBURGRING</div>
-  <svg class="spa-stage" viewBox="0 0 420 390" aria-label="Rennwagen auf der Nürburgring Nordschleife">
-    <defs>
-      <filter id="carGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-      <path id="nordschleifePath" d="M55 220 C38 194,41 163,63 145 C87 126,117 137,128 111 C141 79,177 66,202 83 C223 98,220 128,246 139 C272 150,287 124,313 129 C344 135,359 163,350 188 C341 212,315 224,318 248 C322 276,351 281,365 303 C378 323,362 343,337 341 C312 339,298 318,276 323 C253 328,247 351,224 350 C198 349,188 325,164 326 C142 327,132 349,109 347 C87 345,75 326,81 306 C87 286,110 275,102 254 C95 235,69 236,55 220 Z"/>
-    </defs>
-    <use href="#nordschleifePath" class="spa-track-shadow"/>
-    <use href="#nordschleifePath" class="spa-track"/>
-    <text x="20" y="378" class="spa-caption">NÜRBURGRING · NORDSCHLEIFE</text>
-    <g class="race-car" filter="url(#carGlow)">
-      <rect x="-14" y="-6" width="28" height="12" rx="4"/>
-      <rect x="-7" y="-10" width="14" height="7" rx="3" class="car-cabin"/>
-      <rect x="-15" y="-8" width="4" height="4" rx="1" class="car-wheel"/>
-      <rect x="11" y="-8" width="4" height="4" rx="1" class="car-wheel"/>
-      <rect x="-15" y="4" width="4" height="4" rx="1" class="car-wheel"/>
-      <rect x="11" y="4" width="4" height="4" rx="1" class="car-wheel"/>
-      <animateMotion dur="2.8s" repeatCount="indefinite" rotate="auto"><mpath href="#nordschleifePath"/></animateMotion>
-    </g>
-  </svg>
+  <div class="track-shell splash-track">
+    <img class="track-reference" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMwAAADACAAAAABti9NVAAAFHklEQVR4Ad3BC3Ybh4JEMdz9L7qGkvM8ia1Ps0WRPALyg+QHyQ+S7zbkLvLNJpN7yLcaYbmHfKMhF8s95FvML3m13ENuby7y/yb3kFsb8h+Te8itTf4wuYecN/nL5E+Te8hZ8yJ/mPxpcg85acLIv438ZbmHnLS8GLmYiwz5y/IVyyE5Z/LLNP+Sv01Om1/ymZwz+ceQV3ORv0zOmjAX+VjOmfxj5LfJ3yYnTV6NfCinTN4x+dvknOV/Jh/JCSNXGjlj+W3kfbnakKuNnDD5bch7crXJKUMOGfll8m+Td+Rak7PmX/Km+UdeTP5r8rZcbfJl8yp/mBcxuZj8YfK2XG9yE0P+bfJq8mLyp+VtOWEucguT30ZeTS5G/rK8LedMbmLyj5EXI3ORNyxvy0mTmxh5MXk1v+RNk7flrOVG5pe8mFd5z+RtOWu5mSG/LJP3Le/IWcu3GPKB5R05a/kWQz4weVtOmjzIkDfkpOVxJm/IOZMHmvwtp0weafK3nDF5qMnfcsLksSZ/y/UmDzNheUOuNnmY+SVvyLUmDzN5X640eZzJ+3KVkceZfCDXmDzQ5CO5xuSBJh/JNSaPM/lQrrI8zuRDucbkcSYfyhUmDzT5UK6wPNLkQ7nC8kiTD+UKyyNNPpQrLI80+VCOmzzS5EM5bvJIy8dy3PJAIx/LYZNHmYt8IoctjzLyuRw1eZDJETlo8iCTQ3LM5FEmh+SQyaNMjskRk4dZDsrnRh5mclA+NfIwk6PymcnjjByVj408zshh+ciQx5lcIe8bckcjvw25Rt4z5J7mRV7MRa6T9yx3NWL+J1fLe5Z7mrwackreM3I/k6/K+0buZvJF+cjIvYx8ST40uZu5yHn52OSORk7LJyb3NDkrn5jc1eSkfGZyT5OT8pnJXS0n5VOTe1pOyqcmdzQ5KZ+b3M3krHxuci8jZ+WA5U4m5+WAyT2MfEGOWL7fyJfkiOXbTb4oR0y+18hX5YjJdxr5uhwx+T4jt5BDlm8zchM5ZPkmIzeSQ5bvMXIrOWT5DiO3k0OW2xu5pRyy3NzITeWIyY2N3FiOmNzWyK3liOWmRm4vB0xuafIdcsDkdka+RQ5YbmIy8k1ywHIT0+Tb5IDlNka+Tw5YbmEu8n1ywOTrRpPvkyMmXzTyzXLI5CtGvl0OmXzByPfLMZOzRu4hB03OGbmLHDU5Y3InOWxyvcm95LjJtSZ3kyuMXGVyP7nK5ArTcje5zuSwyT3lSpOjlrvKtSbHTO4q15p8YC2vJveVq82LvG1NXix3listhrxtLS8md5YrzUUmf5nMRUzuLdeaFpM/DK21TO4uZ03+Y5oXMbm/nDX5j8mLxeT+ctr8IxcjhoY8QM6bXMwvGZqLPEJuYGj+kUfJrYyMPExuZGTkcfJ18yojD5QvmVd5MfJI+YqR30YeKV8w+W1e5IFy3uS3IcsD5bTJb3PR5IFy1uT/jYY8UE6aMHIxcrE8UM6ZzKsYuZg8UE6ZmLCMPIGcspgwjTyDnDIxskaeQs4ZMa/yHHLWZC7yLHLatDyTnLYszyRnTZNnkrOmyTPJWcvyVHLSNHkqOWmaPJWctCzPJScty3PJOdPIU8k5kyFPJOdMGHkeOWm5mDyPnLQYeSI5ZzLyTHLKNPJccsY08mRywlzk6eR6c5Hnk6tNkyeUq02TJ5SrDXlG+UHyg+QHyQ+SHyQ/SH6Q/CD5QfKD5AfJD5IfJD9IfpD8IPlB8oPkB8kPkh8kP0h+kP8Ds5ew0KaKRtYAAAAASUVORK5CYII=" alt="Nürburgring Nordschleife">
+    <div class="track-car" aria-hidden="true"><i></i></div>
+    <div class="track-label">NÜRBURGRING · NORDSCHLEIFE</div>
+  </div>
   <div class="splash-line"></div>
   <div class="splash-status">Rennwochenende wird vorbereitet …</div>
 </div>
@@ -85,6 +72,14 @@
     <h1>Bereit für die Boxengasse.</h1>
     <p>Messungen, Fahrer und Fahrzeugdaten direkt aus der gemeinsamen Team-Datenbank.</p>
     <button class="primary big" data-go="measure">+ NEUE MESSUNG</button>
+  </div>
+  <div class="home-track-card">
+    <div>
+      <div class="eyebrow">LIVE TRACK</div>
+      <strong>Nürburgring Nordschleife</strong>
+      <span>Teamdaten · Session · Fahrzeug</span>
+    </div>
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMwAAADACAAAAABti9NVAAAFHklEQVR4Ad3BC3Ybh4JEMdz9L7qGkvM8ia1Ps0WRPALyg+QHyQ+S7zbkLvLNJpN7yLcaYbmHfKMhF8s95FvML3m13ENuby7y/yb3kFsb8h+Te8itTf4wuYecN/nL5E+Te8hZ8yJ/mPxpcg85acLIv438ZbmHnLS8GLmYiwz5y/IVyyE5Z/LLNP+Sv01Om1/ymZwz+ceQV3ORv0zOmjAX+VjOmfxj5LfJ3yYnTV6NfCinTN4x+dvknOV/Jh/JCSNXGjlj+W3kfbnakKuNnDD5bch7crXJKUMOGfll8m+Td+Rak7PmX/Km+UdeTP5r8rZcbfJl8yp/mBcxuZj8YfK2XG9yE0P+bfJq8mLyp+VtOWEucguT30ZeTS5G/rK8LedMbmLyj5EXI3ORNyxvy0mTmxh5MXk1v+RNk7flrOVG5pe8mFd5z+RtOWu5mSG/LJP3Le/IWcu3GPKB5R05a/kWQz4weVtOmjzIkDfkpOVxJm/IOZMHmvwtp0weafK3nDF5qMnfcsLksSZ/y/UmDzNheUOuNnmY+SVvyLUmDzN5X640eZzJ+3KVkceZfCDXmDzQ5CO5xuSBJh/JNSaPM/lQrrI8zuRDucbkcSYfyhUmDzT5UK6wPNLkQ7nC8kiTD+UKyyNNPpQrLI80+VCOmzzS5EM5bvJIy8dy3PJAIx/LYZNHmYt8IoctjzLyuRw1eZDJETlo8iCTQ3LM5FEmh+SQyaNMjskRk4dZDsrnRh5mclA+NfIwk6PymcnjjByVj408zshh+ciQx5lcIe8bckcjvw25Rt4z5J7mRV7MRa6T9yx3NWL+J1fLe5Z7mrwackreM3I/k6/K+0buZvJF+cjIvYx8ST40uZu5yHn52OSORk7LJyb3NDkrn5jc1eSkfGZyT5OT8pnJXS0n5VOTe1pOyqcmdzQ5KZ+b3M3krHxuci8jZ+WA5U4m5+WAyT2MfEGOWL7fyJfkiOXbTb4oR0y+18hX5YjJdxr5uhwx+T4jt5BDlm8zchM5ZPkmIzeSQ5bvMXIrOWT5DiO3k0OW2xu5pRyy3NzITeWIyY2N3FiOmNzWyK3liOWmRm4vB0xuafIdcsDkdka+RQ5YbmIy8k1ywHIT0+Tb5IDlNka+Tw5YbmEu8n1ywOTrRpPvkyMmXzTyzXLI5CtGvl0OmXzByPfLMZOzRu4hB03OGbmLHDU5Y3InOWxyvcm95LjJtSZ3kyuMXGVyP7nK5ArTcje5zuSwyT3lSpOjlrvKtSbHTO4q15p8YC2vJveVq82LvG1NXix3listhrxtLS8md5YrzUUmf5nMRUzuLdeaFpM/DK21TO4uZ03+Y5oXMbm/nDX5j8mLxeT+ctr8IxcjhoY8QM6bXMwvGZqLPEJuYGj+kUfJrYyMPExuZGTkcfJ18yojD5QvmVd5MfJI+YqR30YeKV8w+W1e5IFy3uS3IcsD5bTJb3PR5IFy1uT/jYY8UE6aMHIxcrE8UM6ZzKsYuZg8UE6ZmLCMPIGcspgwjTyDnDIxskaeQs4ZMa/yHHLWZC7yLHLatDyTnLYszyRnTZNnkrOmyTPJWcvyVHLSNHkqOWmaPJWctCzPJScty3PJOdPIU8k5kyFPJOdMGHkeOWm5mDyPnLQYeSI5ZzLyTHLKNPJccsY08mRywlzk6eR6c5Hnk6tNkyeUq02TJ5SrDXlG+UHyg+QHyQ+SHyQ/SH6Q/CD5QfKD5AfJD5IfJD9IfpD8IPlB8oPkB8kPkh8kP0h+kP8Ds5ew0KaKRtYAAAAASUVORK5CYII=" alt="Nordschleife">
   </div>
   <div class="quickstats">
     <div><b id="statEntries">0</b><span>Messungen</span></div>
