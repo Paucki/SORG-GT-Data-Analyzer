@@ -3761,17 +3761,339 @@ class SimpleResultPage(QWidget):
             self.summary.setText("Alle vier Reifen liegen innerhalb der Zieldruck-Toleranz.")
 
 
-class SimpleMeasurementPage(QuickWorkflowPage):
-    """Boxengassen-Modus mit möglichst wenigen Klicks."""
+class SimpleMeasurementPage(QWidget):
+    """Einfacher Rennbetrieb: automatisch vorausgewählt und nur die nächsten nötigen Aktionen sichtbar."""
 
     def __init__(self, database: Database, refresh_callback):
-        super().__init__(database, refresh_callback)
-        # Die bestehende Schnellerfassung ist bereits der geführte Messmodus.
-        # Titel und Erklärung werden für den einfachen Modus angepasst.
-        title = self.findChild(QLabel, "pageTitle")
-        if title is not None:
-            title.setText("Messung")
+        super().__init__()
+        self.database = database
+        self.refresh_callback = refresh_callback
 
+        root = QVBoxLayout(self)
+        root.setContentsMargins(38, 30, 38, 30)
+        root.setSpacing(18)
+
+        header = QHBoxLayout()
+        title_box = QVBoxLayout()
+        title = QLabel("Rennbetrieb")
+        title.setObjectName("pageTitle")
+        subtitle = QLabel("Alles Wichtige für die Boxengasse auf einer Seite.")
+        subtitle.setObjectName("mutedText")
+        title_box.addWidget(title)
+        title_box.addWidget(subtitle)
+        header.addLayout(title_box)
+        header.addStretch()
+
+        self.change_selection = QPushButton("Auswahl ändern")
+        self.change_selection.setCheckable(True)
+        self.change_selection.clicked.connect(self._toggle_selection)
+        header.addWidget(self.change_selection)
+        root.addLayout(header)
+
+        self.selection_card = QFrame()
+        self.selection_card.setObjectName("contentCard")
+        sel = QGridLayout(self.selection_card)
+        sel.setContentsMargins(20, 18, 20, 18)
+        sel.setHorizontalSpacing(12)
+        sel.setVerticalSpacing(10)
+
+        sel.addWidget(QLabel("Rennwochenende"), 0, 0)
+        self.event_combo = QComboBox()
+        self.event_combo.currentIndexChanged.connect(self._event_changed)
+        sel.addWidget(self.event_combo, 0, 1)
+        new_event = QPushButton("+ Neu")
+        new_event.clicked.connect(self.new_event)
+        sel.addWidget(new_event, 0, 2)
+
+        sel.addWidget(QLabel("Session"), 1, 0)
+        self.session_combo = QComboBox()
+        self.session_combo.currentIndexChanged.connect(self._session_changed)
+        sel.addWidget(self.session_combo, 1, 1)
+        new_session = QPushButton("+ Neu")
+        new_session.clicked.connect(self.new_session)
+        sel.addWidget(new_session, 1, 2)
+
+        sel.addWidget(QLabel("Reifensatz"), 2, 0)
+        self.tyre_set_combo = QComboBox()
+        self.tyre_set_combo.currentIndexChanged.connect(self._update_screen)
+        sel.addWidget(self.tyre_set_combo, 2, 1)
+        new_set = QPushButton("+ Neu")
+        new_set.clicked.connect(self.new_tyre_set)
+        sel.addWidget(new_set, 2, 2)
+
+        root.addWidget(self.selection_card)
+        self.selection_card.setVisible(False)
+
+        self.current_card = QFrame()
+        self.current_card.setObjectName("simpleHeroCard")
+        current_layout = QVBoxLayout(self.current_card)
+        current_layout.setContentsMargins(26, 22, 26, 22)
+        current_layout.setSpacing(8)
+
+        current_label = QLabel("AKTUELL")
+        current_label.setObjectName("simpleEyebrow")
+        current_layout.addWidget(current_label)
+
+        self.current_event = QLabel("Noch kein Rennwochenende")
+        self.current_event.setObjectName("simpleMainValue")
+        self.current_event.setWordWrap(True)
+        current_layout.addWidget(self.current_event)
+
+        self.current_session = QLabel("")
+        self.current_session.setObjectName("simpleSubValue")
+        self.current_session.setWordWrap(True)
+        current_layout.addWidget(self.current_session)
+
+        self.current_set = QLabel("")
+        self.current_set.setObjectName("simpleSubValue")
+        self.current_set.setWordWrap(True)
+        current_layout.addWidget(self.current_set)
+        root.addWidget(self.current_card)
+
+        self.next_card = QFrame()
+        self.next_card.setObjectName("contentCard")
+        next_layout = QVBoxLayout(self.next_card)
+        next_layout.setContentsMargins(24, 22, 24, 22)
+        next_layout.setSpacing(12)
+
+        self.next_title = QLabel("Bereit")
+        self.next_title.setObjectName("sectionTitle")
+        next_layout.addWidget(self.next_title)
+
+        self.next_text = QLabel("")
+        self.next_text.setObjectName("mutedText")
+        self.next_text.setWordWrap(True)
+        next_layout.addWidget(self.next_text)
+
+        self.next_button = QPushButton("")
+        self.next_button.setObjectName("primaryButton")
+        self.next_button.setMinimumHeight(58)
+        next_layout.addWidget(self.next_button)
+
+        root.addWidget(self.next_card)
+
+        self.measurement_card = QFrame()
+        self.measurement_card.setObjectName("contentCard")
+        m = QVBoxLayout(self.measurement_card)
+        m.setContentsMargins(24, 22, 24, 22)
+        m.setSpacing(14)
+
+        m_title = QHBoxLayout()
+        heading = QLabel("Reifendruck erfassen")
+        heading.setObjectName("sectionTitle")
+        m_title.addWidget(heading)
+        m_title.addStretch()
+        self.progress_label = QLabel("0 / 4")
+        self.progress_label.setObjectName("simpleProgress")
+        m_title.addWidget(self.progress_label)
+        m.addLayout(m_title)
+
+        self.wheel_buttons = {}
+        wheel_grid = QGridLayout()
+        wheel_grid.setSpacing(12)
+        for index, (position, label) in enumerate((
+            ("FL", "VORNE LINKS"),
+            ("FR", "VORNE RECHTS"),
+            ("RL", "HINTEN LINKS"),
+            ("RR", "HINTEN RECHTS"),
+        )):
+            button = QPushButton(label)
+            button.setObjectName("wheelAction")
+            button.setMinimumHeight(84)
+            button.clicked.connect(lambda checked=False, pos=position: self.measure_tyre(pos))
+            wheel_grid.addWidget(button, index // 2, index % 2)
+            self.wheel_buttons[position] = button
+        m.addLayout(wheel_grid)
+
+        all_button = QPushButton("ALLE 4 NACHEINANDER MESSEN")
+        all_button.setObjectName("primaryButton")
+        all_button.setMinimumHeight(58)
+        all_button.clicked.connect(self.measure_all)
+        m.addWidget(all_button)
+
+        result_button = QPushButton("Ergebnis ansehen")
+        result_button.setMinimumHeight(46)
+        result_button.clicked.connect(self._open_result)
+        m.addWidget(result_button)
+
+        root.addWidget(self.measurement_card)
+        root.addStretch()
+
+    def _toggle_selection(self):
+        self.selection_card.setVisible(self.change_selection.isChecked())
+        self.change_selection.setText(
+            "Auswahl schließen" if self.change_selection.isChecked() else "Auswahl ändern"
+        )
+
+    def refresh(self):
+        previous = self.event_combo.currentData()
+        self.event_combo.blockSignals(True)
+        self.event_combo.clear()
+        for row in self.database.get_events():
+            track = row["track_name"] if "track_name" in row.keys() else ""
+            self.event_combo.addItem(f'{row["name"]} · {track}'.strip(" ·"), row["id"])
+        self.event_combo.blockSignals(False)
+        if previous is not None:
+            idx = self.event_combo.findData(previous)
+            if idx >= 0:
+                self.event_combo.setCurrentIndex(idx)
+        self._event_changed()
+
+    def _event_changed(self):
+        previous = self.session_combo.currentData()
+        self.session_combo.blockSignals(True)
+        self.session_combo.clear()
+        event_id = self.event_combo.currentData()
+        if event_id is not None:
+            for row in self.database.get_sessions_for_event(int(event_id)):
+                driver = " ".join(
+                    x for x in (row["driver_first_name"], row["driver_last_name"]) if x
+                ) or "Ohne Fahrer"
+                car = f'{row["manufacturer"]} {row["model"]}'.strip() or "Ohne Fahrzeug"
+                self.session_combo.addItem(
+                    f'{row["session_type"]} · {driver} · {car}', row["id"]
+                )
+        self.session_combo.blockSignals(False)
+        if previous is not None:
+            idx = self.session_combo.findData(previous)
+            if idx >= 0:
+                self.session_combo.setCurrentIndex(idx)
+        self._session_changed()
+
+    def _session_changed(self):
+        previous = self.tyre_set_combo.currentData()
+        self.tyre_set_combo.blockSignals(True)
+        self.tyre_set_combo.clear()
+        session_id = self.session_combo.currentData()
+        if session_id is not None:
+            for row in self.database.get_tyre_sets_for_session(int(session_id)):
+                number = row["set_number"] or row["id"]
+                detail = " · ".join(
+                    value for value in (row["manufacturer"], row["compound"]) if value
+                )
+                self.tyre_set_combo.addItem(
+                    f'Reifensatz {number}' + (f' · {detail}' if detail else ""),
+                    row["id"],
+                )
+        self.tyre_set_combo.blockSignals(False)
+        if previous is not None:
+            idx = self.tyre_set_combo.findData(previous)
+            if idx >= 0:
+                self.tyre_set_combo.setCurrentIndex(idx)
+        self._update_screen()
+
+    def _update_screen(self):
+        event_text = self.event_combo.currentText().strip()
+        session_text = self.session_combo.currentText().strip()
+        set_text = self.tyre_set_combo.currentText().strip()
+
+        self.current_event.setText(event_text or "Noch kein Rennwochenende")
+        self.current_session.setText(session_text if session_text else "Noch keine Session")
+        self.current_set.setText(set_text if set_text else "Noch kein Reifensatz")
+
+        if self.event_combo.currentData() is None:
+            self.next_card.setVisible(True)
+            self.measurement_card.setVisible(False)
+            self.next_title.setText("1 · Rennwochenende anlegen")
+            self.next_text.setText("Einmal anlegen – danach bleibt es ausgewählt.")
+            self.next_button.setText("RENNWOCHENENDE ANLEGEN")
+            self._set_next_action(self.new_event)
+            return
+
+        if self.session_combo.currentData() is None:
+            self.next_card.setVisible(True)
+            self.measurement_card.setVisible(False)
+            self.next_title.setText("2 · Session anlegen")
+            self.next_text.setText("Fahrer, Fahrzeug und Session auswählen.")
+            self.next_button.setText("SESSION ANLEGEN")
+            self._set_next_action(self.new_session)
+            return
+
+        if self.tyre_set_combo.currentData() is None:
+            self.next_card.setVisible(True)
+            self.measurement_card.setVisible(False)
+            self.next_title.setText("3 · Reifensatz anlegen")
+            self.next_text.setText("Danach kannst du sofort mit der Messung beginnen.")
+            self.next_button.setText("REIFENSATZ ANLEGEN")
+            self._set_next_action(self.new_tyre_set)
+            return
+
+        self.next_card.setVisible(False)
+        self.measurement_card.setVisible(True)
+        self._refresh_measurement_progress()
+
+    def _set_next_action(self, callback):
+        try:
+            self.next_button.clicked.disconnect()
+        except Exception:
+            pass
+        self.next_button.clicked.connect(callback)
+
+    def _refresh_measurement_progress(self):
+        tyre_set_id = self.tyre_set_combo.currentData()
+        measured = {}
+        if tyre_set_id is not None:
+            measured = {
+                row["position"]: row
+                for row in self.database.get_tyre_measurements(int(tyre_set_id))
+            }
+        count = len([p for p in ("FL", "FR", "RL", "RR") if p in measured])
+        self.progress_label.setText(f"{count} / 4 gemessen")
+        labels = {
+            "FL": "VORNE LINKS",
+            "FR": "VORNE RECHTS",
+            "RL": "HINTEN LINKS",
+            "RR": "HINTEN RECHTS",
+        }
+        for position, button in self.wheel_buttons.items():
+            if position in measured:
+                button.setText(f"✓  {labels[position]}\nMESSUNG VORHANDEN")
+                button.setProperty("measured", True)
+            else:
+                button.setText(f"{labels[position]}\nMESSEN")
+                button.setProperty("measured", False)
+            button.style().unpolish(button)
+            button.style().polish(button)
+
+    def new_event(self):
+        if EventDialog(self.database, parent=self).exec():
+            self.refresh_callback()
+
+    def new_session(self):
+        event_id = self.event_combo.currentData()
+        if event_id is None:
+            return
+        if SessionDialog(self.database, int(event_id), parent=self).exec():
+            self.refresh_callback()
+
+    def new_tyre_set(self):
+        session_id = self.session_combo.currentData()
+        if session_id is None:
+            return
+        if TyreSetDialog(self.database, int(session_id), parent=self).exec():
+            self.refresh_callback()
+
+    def measure_tyre(self, position: str) -> bool:
+        tyre_set_id = self.tyre_set_combo.currentData()
+        if tyre_set_id is None:
+            return False
+        accepted = TyreMeasurementDialog(
+            self.database, int(tyre_set_id), position, self
+        ).exec()
+        if accepted:
+            self.refresh_callback()
+            self._refresh_measurement_progress()
+        return bool(accepted)
+
+    def measure_all(self):
+        for position in ("FL", "FR", "RL", "RR"):
+            if not self.measure_tyre(position):
+                break
+
+    def _open_result(self):
+        window = self.window()
+        if hasattr(window, "navigate_to"):
+            window.navigate_to(1)
 
 
 class MainWindow(QMainWindow):
