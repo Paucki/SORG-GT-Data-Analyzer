@@ -85,3 +85,9 @@ input,select,textarea{background:#0a0d11;border-color:#303842;color:#f7f8fa}.inp
 .first-draft-track .race-car rect:first-child{fill:#e21b2d}.first-draft-track .race-car rect:nth-child(2){fill:#f3f5f7}
 .setup-stack{display:flex;flex-direction:column;gap:12px}.setup-card{background:linear-gradient(180deg,#141920,#0f1318);border:1px solid #29313a;border-radius:17px;padding:15px;box-shadow:0 10px 28px rgba(0,0,0,.14)}
 .setup-card .section-title{margin-bottom:10px}.setup-card input,.setup-card select{margin-top:0;margin-bottom:9px}.setup-card label{margin-bottom:0}.setup-card .two{align-items:start}.setup-card button{margin-top:2px}
+
+/* V1.8.5 FULL SHARED DATA */
+.teamdata-grid{display:flex;flex-direction:column;gap:12px}
+.shared-list{display:flex;flex-direction:column;gap:7px;margin-top:8px}
+.shared-row{padding:10px 12px;border:1px solid #2b323b;border-radius:11px;background:#0c1015;color:#edf1f5;font-size:14px;line-height:1.35}
+.shared-row+.shared-row{margin-top:0}
