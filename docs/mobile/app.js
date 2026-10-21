@@ -5,6 +5,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 
 let teamId='';
 let currentUser=null;
+let currentRole='user';
 let cloud={vehicles:[],drivers:[],events:[],sessions:[],sets:[],measurements:[]};
 
 function esc(v=''){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -123,7 +124,10 @@ async function initAccount(session){
     return;
   }
   teamId=data[0].team_id;
+  currentRole=data[0].role||'user';
+  $('#adminUsersCard').classList.toggle('hidden',currentRole!=='admin');
   $('#loginScreen').classList.add('hidden');
+  $('#recoveryScreen').classList.add('hidden');
   $('#app').classList.remove('hidden');
   await loadCloud();
 }
@@ -139,8 +143,29 @@ $('#loginBtn').onclick=async()=>{
   $('#loginStatus').textContent='';
   await initAccount(data.session);
 };
+
+$('#forgotBtn').onclick=async()=>{
+  const email=$('#loginEmail').value.trim();
+  if(!email){$('#loginStatus').textContent='Bitte zuerst deine E-Mail-Adresse eingeben.';return}
+  $('#loginStatus').textContent='Reset-Link wird gesendet …';
+  const redirectTo=location.origin+location.pathname;
+  const {error}=await supa.auth.resetPasswordForEmail(email,{redirectTo});
+  $('#loginStatus').textContent=error
+    ? 'Passwort-Reset nicht möglich: '+error.message
+    : 'Reset-Link wurde per E-Mail gesendet.';
+};
 $('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginBtn').click()});
-$('#logoutBtn').onclick=async()=>{await supa.auth.signOut();teamId='';await initAccount(null)};
+$('#savePasswordBtn').onclick=async()=>{
+  const p1=$('#newPassword').value, p2=$('#newPassword2').value;
+  if(p1.length<6){$('#recoveryStatus').textContent='Passwort muss mindestens 6 Zeichen haben.';return}
+  if(p1!==p2){$('#recoveryStatus').textContent='Die Passwörter stimmen nicht überein.';return}
+  const {error}=await supa.auth.updateUser({password:p1});
+  if(error){$('#recoveryStatus').textContent='Passwort konnte nicht geändert werden: '+error.message;return}
+  $('#recoveryStatus').textContent='Passwort wurde geändert.';
+  setTimeout(async()=>{const {data}=await supa.auth.getSession();await initAccount(data.session)},500);
+};
+
+$('#logoutBtn').onclick=async()=>{await supa.auth.signOut();teamId='';currentRole='user';await initAccount(null)};
 $('#reloadBtn').onclick=()=>loadCloud();
 
 function populateMeasure(){
@@ -226,6 +251,91 @@ $('#pressureForm').onsubmit=async e=>{
   go('home');
 };
 
+async function adminCall(payload){
+  const {data,error}=await supa.functions.invoke('admin-users',{body:payload});
+  if(error)throw new Error(error.message||'Admin-Funktion fehlgeschlagen');
+  if(data?.error)throw new Error(data.error);
+  return data||{};
+}
+
+async function loadAdminUsers(){
+  $('#adminStatus').textContent='Benutzer werden geladen …';
+  try{
+    const data=await adminCall({action:'list'});
+    const users=data.users||[];
+    $('#adminUserList').innerHTML=users.map(u=>`
+      <div class="user-admin-row" data-id="${u.id}">
+        <div class="user-admin-head">
+          <div><b>${esc(u.display_name||u.email)}</b><span>${esc(u.email)}</span></div>
+          <span class="user-state ${u.inactive?'off':''}">${u.inactive?'INAKTIV':'AKTIV'}</span>
+        </div>
+        <div class="user-admin-actions">
+          <select class="roleSelect">
+            <option value="user" ${u.role==='user'?'selected':''}>Benutzer</option>
+            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+          </select>
+          <button class="ghost compact roleBtn">Rolle speichern</button>
+          <button class="ghost compact pwBtn">Passwort setzen</button>
+          <button class="ghost compact activeBtn">${u.inactive?'Aktivieren':'Deaktivieren'}</button>
+        </div>
+      </div>
+    `).join('')||'<div class="empty">Noch keine Benutzer.</div>';
+
+    $('.user-admin-row').forEach(row=>{
+      const id=row.dataset.id;
+      row.querySelector('.roleBtn').onclick=async()=>{
+        try{
+          await adminCall({action:'set_role',user_id:id,role:row.querySelector('.roleSelect').value});
+          await loadAdminUsers();
+        }catch(e){$('#adminStatus').textContent=e.message}
+      };
+      row.querySelector('.pwBtn').onclick=async()=>{
+        const pw=prompt('Neues Passwort eingeben:');
+        if(pw===null)return;
+        try{
+          await adminCall({action:'set_password',user_id:id,password:pw});
+          $('#adminStatus').textContent='Passwort wurde geändert.';
+        }catch(e){$('#adminStatus').textContent=e.message}
+      };
+      row.querySelector('.activeBtn').onclick=async()=>{
+        const inactive=row.querySelector('.user-state').classList.contains('off');
+        try{
+          await adminCall({action:'set_active',user_id:id,active:inactive});
+          await loadAdminUsers();
+        }catch(e){$('#adminStatus').textContent=e.message}
+      };
+    });
+    $('#adminStatus').textContent=users.length+' Benutzer';
+  }catch(e){
+    $('#adminStatus').textContent=e.message;
+  }
+}
+
+$('#loadUsersBtn').onclick=async()=>{
+  $('#userAdminPanel').classList.remove('hidden');
+  await loadAdminUsers();
+};
+
+$('#createUserBtn').onclick=async()=>{
+  const payload={
+    action:'create',
+    display_name:$('#adminName').value.trim(),
+    email:$('#adminEmail').value.trim(),
+    password:$('#adminPassword').value,
+    role:$('#adminRole').value
+  };
+  try{
+    await adminCall(payload);
+    $('#adminName').value='';
+    $('#adminEmail').value='';
+    $('#adminPassword').value='';
+    $('#adminStatus').textContent='Benutzer wurde angelegt.';
+    await loadAdminUsers();
+  }catch(e){
+    $('#adminStatus').textContent=e.message;
+  }
+};
+
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{
   e.preventDefault();deferredPrompt=e;$('#installBtn').classList.remove('hidden');
@@ -239,5 +349,13 @@ $('#installBtn').onclick=async()=>{
 };
 
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
-supa.auth.onAuthStateChange((_event,session)=>initAccount(session));
+supa.auth.onAuthStateChange(async(event,session)=>{
+  if(event==='PASSWORD_RECOVERY'){
+    $('#loginScreen').classList.add('hidden');
+    $('#app').classList.add('hidden');
+    $('#recoveryScreen').classList.remove('hidden');
+    return;
+  }
+  await initAccount(session);
+});
 (async()=>{const {data}=await supa.auth.getSession();await initAccount(data.session)})();
