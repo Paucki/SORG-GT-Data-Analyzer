@@ -9,11 +9,13 @@ import secrets
 import subprocess
 import tempfile
 import urllib.error
+import urllib.parse
 import urllib.request
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QDialog,
     QFrame,
     QFormLayout,
@@ -22,6 +24,8 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
 )
 
@@ -29,6 +33,8 @@ LATEST_URL = "https://raw.githubusercontent.com/Paucki/SORG-GT-Data-Analyzer/mai
 ACCOUNT_SERVER_URL = os.environ.get("SORG_ACCOUNT_SERVER_URL", "").strip().rstrip("/")
 SUPABASE_URL = "https://cdhfmhxhhtqqoetlferj.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable_r9xkC56K3zezl30297f1qQ_fsz6ztfl"
+MOBILE_APP_URL = "https://paucki.github.io/SORG-GT-Data-Analyzer/mobile/"
+ADMIN_USERS_URL = SUPABASE_URL + "/functions/v1/admin-users"
 
 
 @dataclass
@@ -205,6 +211,11 @@ class LoginDialog(QDialog):
         self.login_button.setDefault(True)
         self.login_button.clicked.connect(self.try_login)
         card_layout.addWidget(self.login_button)
+
+        forgot = QPushButton("Passwort vergessen?")
+        forgot.setObjectName("passwordToggle")
+        forgot.clicked.connect(self.request_password_reset)
+        card_layout.addWidget(forgot)
 
         self.setup_button = QPushButton("Ersten Benutzer anlegen")
         self.setup_button.setObjectName("secondary")
@@ -413,6 +424,35 @@ class LoginDialog(QDialog):
             token=data.get("token", ""),
         )
 
+    def request_password_reset(self):
+        email = self.username.text().strip()
+        if not email or "@" not in email:
+            self.status.setText("Bitte zuerst deine E-Mail-Adresse eingeben.")
+            return
+        body = json.dumps({"email": email}).encode("utf-8")
+        redirect = urllib.parse.quote(MOBILE_APP_URL, safe="")
+        request = urllib.request.Request(
+            SUPABASE_URL + "/auth/v1/recover?redirect_to=" + redirect,
+            data=body,
+            headers={
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
+                "Content-Type": "application/json",
+                "User-Agent": "SORG-GT-Data-Analyzer",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=12):
+                pass
+            QMessageBox.information(
+                self,
+                "Passwort zurücksetzen",
+                "Eine E-Mail zum Zurücksetzen des Passworts wurde versendet.\n\n"
+                "Öffne den Link in der E-Mail und vergib dort dein neues Passwort.",
+            )
+        except Exception as error:
+            self.status.setText(f"Passwort-Reset nicht möglich: {error}")
+
     def try_login(self):
         username = self.username.text().strip()
         password = self.password.text()
@@ -436,6 +476,200 @@ class LoginDialog(QDialog):
             pass
         self.user_session = session
         self.accept()
+
+
+class UserAdminDialog(QDialog):
+    """Benutzerverwaltung für SORG-Administratoren."""
+
+    def __init__(self, session: UserSession, parent=None):
+        super().__init__(parent)
+        self.session = session
+        self.users = []
+        self.setWindowTitle("SORG GT · Benutzerverwaltung")
+        self.resize(760, 520)
+        self.setModal(True)
+
+        layout = QVBoxLayout(self)
+        title = QLabel("Benutzerverwaltung")
+        title.setStyleSheet("font-size:22px;font-weight:800;")
+        layout.addWidget(title)
+
+        hint = QLabel("Administratoren können Benutzer anlegen, Rollen ändern, Passwörter setzen und Zugänge deaktivieren.")
+        hint.setWordWrap(True)
+        hint.setStyleSheet("color:#9ca3af;")
+        layout.addWidget(hint)
+
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(["Name", "E-Mail", "Rolle", "Status", "Letzte Anmeldung"])
+        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionMode(QTableWidget.SingleSelection)
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+        layout.addWidget(self.table, 1)
+
+        buttons = QHBoxLayout()
+        add_btn = QPushButton("+ Benutzer anlegen")
+        add_btn.clicked.connect(self.create_user)
+        buttons.addWidget(add_btn)
+
+        pw_btn = QPushButton("Passwort setzen")
+        pw_btn.clicked.connect(self.set_password)
+        buttons.addWidget(pw_btn)
+
+        active_btn = QPushButton("Aktiv / Inaktiv")
+        active_btn.clicked.connect(self.toggle_active)
+        buttons.addWidget(active_btn)
+
+        role_btn = QPushButton("Rolle ändern")
+        role_btn.clicked.connect(self.change_role)
+        buttons.addWidget(role_btn)
+
+        buttons.addStretch()
+        refresh_btn = QPushButton("Aktualisieren")
+        refresh_btn.clicked.connect(self.refresh)
+        buttons.addWidget(refresh_btn)
+        layout.addLayout(buttons)
+
+        self.status = QLabel("")
+        self.status.setStyleSheet("color:#f3a6ad;")
+        layout.addWidget(self.status)
+        self.refresh()
+
+    def _call(self, payload):
+        data = json.dumps(payload).encode("utf-8")
+        request = urllib.request.Request(
+            ADMIN_USERS_URL,
+            data=data,
+            headers={
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
+                "Authorization": "Bearer " + self.session.token,
+                "Content-Type": "application/json",
+                "User-Agent": "SORG-GT-Data-Analyzer",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:
+                raw = response.read().decode("utf-8")
+                return json.loads(raw) if raw else {}
+        except urllib.error.HTTPError as error:
+            try:
+                detail = json.loads(error.read().decode("utf-8"))
+                message = detail.get("error") or detail.get("message") or str(detail)
+            except Exception:
+                message = str(error)
+            raise RuntimeError(message) from error
+
+    def refresh(self):
+        try:
+            data = self._call({"action": "list"})
+            self.users = data.get("users", [])
+        except Exception as error:
+            self.status.setText(str(error))
+            return
+        self.table.setRowCount(len(self.users))
+        for row, user in enumerate(self.users):
+            values = [
+                user.get("display_name", ""),
+                user.get("email", ""),
+                user.get("role", "user"),
+                "Inaktiv" if user.get("inactive") else "Aktiv",
+                user.get("last_sign_in_at") or "—",
+            ]
+            for col, value in enumerate(values):
+                item = QTableWidgetItem(str(value))
+                item.setData(Qt.UserRole, user.get("id"))
+                self.table.setItem(row, col, item)
+        self.table.resizeColumnsToContents()
+        self.status.setText(f"{len(self.users)} Benutzer")
+
+    def _selected(self):
+        row = self.table.currentRow()
+        if row < 0 or row >= len(self.users):
+            QMessageBox.information(self, "Benutzerverwaltung", "Bitte zuerst einen Benutzer auswählen.")
+            return None
+        return self.users[row]
+
+    def create_user(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Benutzer anlegen")
+        form = QFormLayout(dialog)
+        name = QLineEdit()
+        email = QLineEdit()
+        password = QLineEdit()
+        password.setEchoMode(QLineEdit.Password)
+        role = QComboBox()
+        role.addItems(["user", "admin"])
+        form.addRow("Name", name)
+        form.addRow("E-Mail", email)
+        form.addRow("Passwort", password)
+        form.addRow("Rolle", role)
+        row = QHBoxLayout()
+        ok = QPushButton("Anlegen")
+        cancel = QPushButton("Abbrechen")
+        row.addWidget(ok)
+        row.addWidget(cancel)
+        form.addRow(row)
+        ok.clicked.connect(dialog.accept)
+        cancel.clicked.connect(dialog.reject)
+        if dialog.exec() != QDialog.Accepted:
+            return
+        try:
+            self._call({
+                "action": "create",
+                "display_name": name.text().strip(),
+                "email": email.text().strip(),
+                "password": password.text(),
+                "role": role.currentText(),
+            })
+            self.refresh()
+        except Exception as error:
+            QMessageBox.critical(self, "Benutzer anlegen", str(error))
+
+    def set_password(self):
+        user = self._selected()
+        if not user:
+            return
+        password, ok = QInputDialog.getText(
+            self, "Passwort setzen", f"Neues Passwort für {user.get('email','')}:", QLineEdit.Password
+        )
+        if not ok:
+            return
+        try:
+            self._call({"action": "set_password", "user_id": user["id"], "password": password})
+            QMessageBox.information(self, "Passwort", "Passwort wurde geändert.")
+        except Exception as error:
+            QMessageBox.critical(self, "Passwort", str(error))
+
+    def toggle_active(self):
+        user = self._selected()
+        if not user:
+            return
+        active = bool(user.get("inactive"))
+        label = "aktivieren" if active else "deaktivieren"
+        if QMessageBox.question(self, "Benutzer", f"{user.get('email','')} wirklich {label}?") != QMessageBox.Yes:
+            return
+        try:
+            self._call({"action": "set_active", "user_id": user["id"], "active": active})
+            self.refresh()
+        except Exception as error:
+            QMessageBox.critical(self, "Benutzer", str(error))
+
+    def change_role(self):
+        user = self._selected()
+        if not user:
+            return
+        choices = ["user", "admin"]
+        current = user.get("role", "user")
+        value, ok = QInputDialog.getItem(
+            self, "Rolle ändern", "Rolle:", choices, choices.index(current) if current in choices else 0, False
+        )
+        if not ok:
+            return
+        try:
+            self._call({"action": "set_role", "user_id": user["id"], "role": value})
+            self.refresh()
+        except Exception as error:
+            QMessageBox.critical(self, "Rolle", str(error))
 
 
 class UpdateClient:
