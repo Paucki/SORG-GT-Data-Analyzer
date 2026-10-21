@@ -1,6 +1,6 @@
 {
-  "version": "1.6.9",
-  "url": "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.6.9/SORG_GT_Data_Analyzer_Setup.exe",
-  "sha256": "5caf1db11d64f2175c0209424dff1f7f9d8299a870d0e925dca7797fc810a8bf",
-  "notes": "Update-Prüfung ohne veralteten Cache | Benutzername statt E-Mail | Teamrollen und Personendaten"
+  "version": "1.7.0",
+  "url": "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.7.0/SORG_GT_Data_Analyzer_Setup.exe",
+  "sha256": "ace45143b43433568730d04140ad9d91dff74ca4df941481d8a619b15837af47",
+  "notes": "Vorname und Nachname getrennt | Angemeldet bleiben | Abmelden | neue Spa-Startansicht auf Mobile"
 }
