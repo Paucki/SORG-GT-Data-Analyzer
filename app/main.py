@@ -4128,20 +4128,20 @@ class MainWindow(QMainWindow):
 
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
-        sidebar.setFixedWidth(238)
+        sidebar.setFixedWidth(210)
         sidebar_layout = QVBoxLayout(sidebar)
 
         brand = QLabel()
         brand.setObjectName("brandImage")
         brand.setAlignment(Qt.AlignCenter)
-        brand.setFixedHeight(135)
+        brand.setFixedHeight(104)
 
         logo_path = resource_path("sorg_full_logo.jpg")
         if logo_path.exists():
             logo_pixmap = QPixmap(str(logo_path))
             brand.setPixmap(
                 logo_pixmap.scaled(
-                    QSize(218, 122),
+                    QSize(190, 92),
                     Qt.KeepAspectRatio,
                     Qt.SmoothTransformation,
                 )
@@ -4714,6 +4714,62 @@ def apply_style(application: QApplication) -> None:
             color: #e5e7eb;
             background: transparent;
             padding: 2px 0 0 0;
+        }
+
+        #simpleHeroCard {
+            background: #11151a;
+            border: 1px solid #303640;
+            border-left: 5px solid #dc2626;
+            border-radius: 16px;
+        }
+
+        #simpleEyebrow {
+            color: #dc2626;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        #simpleMainValue {
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 900;
+            padding-top: 4px;
+        }
+
+        #simpleSubValue {
+            color: #aeb6c2;
+            font-size: 13px;
+        }
+
+        #simpleProgress {
+            color: #ffffff;
+            background: #20242b;
+            border: 1px solid #343b45;
+            border-radius: 14px;
+            padding: 6px 10px;
+            font-weight: 800;
+        }
+
+        QPushButton#wheelAction {
+            background: #14181d;
+            border: 1px solid #363d47;
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 900;
+            text-align: center;
+        }
+
+        QPushButton#wheelAction:hover {
+            border: 1px solid #dc2626;
+            background: #1a1f25;
+        }
+
+        QPushButton#wheelAction[measured="true"] {
+            background: #153524;
+            border: 1px solid #2f9f63;
+            color: #eafff0;
         }
 
         #sidebarSection {
