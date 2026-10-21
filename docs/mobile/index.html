@@ -20,7 +20,7 @@
     <div class="login-card">
       <div class="eyebrow">ANMELDUNG</div>
       <h1>Willkommen zurück</h1>
-      <p>Dasselbe Konto funktioniert am PC und am Handy.</p>
+      <p>Melde dich an und starte direkt ins Rennwochenende.</p>
       <label>E-Mail
         <input id="loginEmail" type="email" autocomplete="email" placeholder="E-Mail-Adresse">
       </label>
@@ -29,6 +29,27 @@
       </label>
       <div id="loginStatus" class="login-status"></div>
       <button id="loginBtn" class="primary big">ANMELDEN</button>
+      <button id="forgotBtn" class="ghost full">Passwort vergessen?</button>
+    </div>
+  </div>
+</div>
+
+<div id="recoveryScreen" class="login-screen hidden">
+  <div class="login-wrap">
+    <div class="login-brand">SORG <span>GT</span></div>
+    <div class="login-sub">PASSWORT</div>
+    <div class="login-card">
+      <div class="eyebrow">PASSWORT ZURÜCKSETZEN</div>
+      <h1>Neues Passwort</h1>
+      <p>Vergib ein neues Passwort für deinen SORG-GT-Zugang.</p>
+      <label>Neues Passwort
+        <input id="newPassword" type="password" autocomplete="new-password" placeholder="Mindestens 6 Zeichen">
+      </label>
+      <label>Passwort wiederholen
+        <input id="newPassword2" type="password" autocomplete="new-password" placeholder="Passwort wiederholen">
+      </label>
+      <div id="recoveryStatus" class="login-status"></div>
+      <button id="savePasswordBtn" class="primary big">PASSWORT SPEICHERN</button>
     </div>
   </div>
 </div>
@@ -116,6 +137,25 @@
           <button id="reloadBtn" class="ghost full">Jetzt synchronisieren</button>
         </div>
       </div>
+      <div id="adminUsersCard" class="admin-card open-card hidden">
+        <div class="admin-body">
+          <div class="section-title">Benutzerverwaltung</div>
+          <p class="muted">Benutzer anlegen, Rollen ändern, Passwörter setzen und Zugänge deaktivieren.</p>
+          <button id="loadUsersBtn" class="ghost full">Benutzer verwalten</button>
+          <div id="userAdminPanel" class="hidden">
+            <div class="admin-create">
+              <input id="adminName" placeholder="Name">
+              <input id="adminEmail" type="email" placeholder="E-Mail">
+              <input id="adminPassword" type="password" placeholder="Startpasswort">
+              <select id="adminRole"><option value="user">Benutzer</option><option value="admin">Admin</option></select>
+              <button id="createUserBtn" class="primary">BENUTZER ANLEGEN</button>
+            </div>
+            <div id="adminStatus" class="login-status"></div>
+            <div id="adminUserList" class="user-list"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="admin-card open-card">
         <div class="admin-body">
           <div class="section-title">Installation</div>
