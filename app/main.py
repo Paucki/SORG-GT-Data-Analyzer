@@ -56,6 +56,7 @@ from PySide6.QtWidgets import (
 from database import Database
 from report_generator import MotorsportReport
 from updater_client import LoginDialog, UpdateClient, UserSession
+from version import APP_VERSION
 from dialogs import (
     CarDialog,
     DriverDialog,
@@ -71,7 +72,6 @@ from dialogs import (
 
 
 APP_NAME = "SORG GT Data Analyzer"
-APP_VERSION = "1.6.2"
 APP_DATA_FOLDER = Path(
     os.environ.get(
         "LOCALAPPDATA",
@@ -3878,7 +3878,7 @@ class MainWindow(QMainWindow):
         self.master_data_hub.addTab(self.drivers_page, "Fahrer")
         self.master_data_hub.addTab(self.tracks_page, "Strecken & Zieldruck")
 
-        navigation_label = QLabel("HAUPTBEREICHE")
+        navigation_label = QLabel("SCHNELLSTART")
         navigation_label.setObjectName("sidebarSection")
         sidebar_layout.addWidget(navigation_label)
 
@@ -3889,9 +3889,9 @@ class MainWindow(QMainWindow):
         self.expert_hub.addTab(self.master_data_hub, "Stammdaten")
 
         pages = (
-            ("🏁  Rennwochenende & Messung", self.quick_page),
+            ("🏁  Rennbetrieb", self.quick_page),
             ("✓  Ergebnis", self.result_page),
-            ("⚙  Expertenmodus", self.expert_hub),
+            ("⚙  Mehr / Experten", self.expert_hub),
         )
 
         self.navigation_buttons = []
@@ -3910,7 +3910,7 @@ class MainWindow(QMainWindow):
         sidebar_photo = QLabel()
         sidebar_photo.setObjectName("sidebarPhoto")
         sidebar_photo.setAlignment(Qt.AlignCenter)
-        sidebar_photo.setMinimumHeight(185)
+        sidebar_photo.setMinimumHeight(120)
 
         sidebar_image = resource_path("motorsport_sidebar.jpg")
 
@@ -3918,7 +3918,7 @@ class MainWindow(QMainWindow):
             sidebar_pixmap = QPixmap(str(sidebar_image))
             sidebar_photo.setPixmap(
                 sidebar_pixmap.scaled(
-                    QSize(190, 185),
+                    QSize(190, 120),
                     Qt.KeepAspectRatioByExpanding,
                     Qt.SmoothTransformation,
                 )
@@ -3926,11 +3926,11 @@ class MainWindow(QMainWindow):
 
         sidebar_layout.addWidget(sidebar_photo)
 
-        tools_label = QLabel("WERKZEUGE")
+        tools_label = QLabel("SERVICE")
         tools_label.setObjectName("sidebarSection")
         sidebar_layout.addWidget(tools_label)
 
-        maps_button = QPushButton("📍 Strecke in Maps")
+        maps_button = QPushButton("📍 Strecke öffnen")
         maps_button.clicked.connect(self.open_selected_track_maps)
         sidebar_layout.addWidget(maps_button)
 
