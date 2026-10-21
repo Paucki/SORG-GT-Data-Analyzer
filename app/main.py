@@ -4625,13 +4625,26 @@ class NuerburgringSplash(QWidget):
         painter.drawText(QRectF(54, 120, 420, 28), Qt.AlignLeft | Qt.AlignVCenter, "NÜRBURGRING NORDSCHLEIFE · RENNBETRIEB")
 
         track = self._track_path()
-        painter.setPen(QPen(QColor(0, 0, 0, 180), 18, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+
+        # Die komplette Nordschleife immer vollständig und zentriert anzeigen.
+        bounds = track.boundingRect()
+        target = QRectF(300, 145, 535, 255)
+        scale = min(target.width() / bounds.width(), target.height() / bounds.height()) * 0.92
+
+        painter.save()
+        painter.translate(
+            target.center().x() - bounds.center().x() * scale,
+            target.center().y() - bounds.center().y() * scale,
+        )
+        painter.scale(scale, scale)
+
+        painter.setPen(QPen(QColor(0, 0, 0, 180), 18 / scale, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         painter.drawPath(track)
-        painter.setPen(QPen(QColor("#e6e9ed"), 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        painter.setPen(QPen(QColor("#e6e9ed"), 4 / scale, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
         painter.drawPath(track)
 
         start = track.pointAtPercent(0.0)
-        painter.setPen(QPen(QColor("#e21b2d"), 8, Qt.SolidLine, Qt.RoundCap))
+        painter.setPen(QPen(QColor("#e21b2d"), 8 / scale, Qt.SolidLine, Qt.RoundCap))
         painter.drawLine(QPointF(start.x() - 8, start.y() - 7), QPointF(start.x() + 8, start.y() + 7))
 
         car = track.pointAtPercent(self.progress)
@@ -4649,6 +4662,7 @@ class NuerburgringSplash(QWidget):
         painter.drawRoundedRect(QRectF(9, -10, 6, 4), 1.5, 1.5)
         painter.drawRoundedRect(QRectF(-15, 6, 6, 4), 1.5, 1.5)
         painter.drawRoundedRect(QRectF(9, 6, 6, 4), 1.5, 1.5)
+        painter.restore()
         painter.restore()
 
         painter.setPen(QColor("#ffffff"))
