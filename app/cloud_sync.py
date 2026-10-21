@@ -551,19 +551,25 @@ class CloudSync:
             })
 
         # Eltern zuerst, danach abhängige Datensätze.
-        # Ein einzelner fehlerhafter Datensatz darf nicht verhindern, dass
-        # andere Stammdaten (z. B. ein neuer Fahrer) synchronisiert werden.
+        # Stammdaten und Sessions werden vollständig upsertet. So werden
+        # neue lokale Datensätze und Änderungen (z. B. Satznummer/Session)
+        # garantiert in die Cloud geschrieben und nicht durch einen
+        # fehlerhaften Zeitstempel übersprungen.
         errors = []
+        always_push = {"vehicles", "drivers", "tracks", "race_weekends", "tyre_sets", "sessions"}
         for table in ("vehicles","drivers","tracks","race_weekends","tyre_sets","sessions","tyre_measurements"):
             try:
-                remote = self._remote_meta(table)
-                send = []
-                for rec in payloads[table]:
-                    old = remote.get(str(rec["id"]))
-                    local_time = _stamp(rec.get("updated_at") or rec.get("created_at"))
-                    remote_time = _stamp((old or {}).get("updated_at") or (old or {}).get("created_at"))
-                    if old is None or local_time >= remote_time:
-                        send.append(rec)
+                if table in always_push:
+                    send = payloads[table]
+                else:
+                    remote = self._remote_meta(table)
+                    send = []
+                    for rec in payloads[table]:
+                        old = remote.get(str(rec["id"]))
+                        local_time = _stamp(rec.get("updated_at") or rec.get("created_at"))
+                        remote_time = _stamp((old or {}).get("updated_at") or (old or {}).get("created_at"))
+                        if old is None or local_time >= remote_time:
+                            send.append(rec)
                 self._upsert(table, send)
             except RuntimeError as error:
                 errors.append(f"{table}: {error}")
