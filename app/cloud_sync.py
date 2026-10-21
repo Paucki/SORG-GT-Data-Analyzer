@@ -200,6 +200,45 @@ class CloudSync:
         sessions = remote("sessions")
         tyre_sets = remote("tyre_sets")
 
+        # Normale Benutzer bekommen nur die Daten, die zu ihren
+        # zugewiesenen Fahrzeugen gehören. Die Fahrzeug-/Session-Tabellen
+        # sind zusätzlich serverseitig per RLS eingeschränkt.
+        if getattr(self.session, "role", "user") != "admin":
+            allowed_vehicle_ids = {str(row["id"]) for row in vehicles}
+            sessions = [
+                row for row in sessions
+                if str(row.get("vehicle_id") or "") in allowed_vehicle_ids
+            ]
+            event_ids = {
+                str(row.get("race_weekend_id"))
+                for row in sessions if row.get("race_weekend_id")
+            }
+            driver_ids = {
+                str(row.get("driver_id"))
+                for row in sessions if row.get("driver_id")
+            }
+            track_ids = {
+                str(row.get("track_id"))
+                for row in sessions if row.get("track_id")
+            }
+            weekends = [
+                row for row in weekends if str(row.get("id")) in event_ids
+            ]
+            track_ids.update(
+                str(row.get("track_id"))
+                for row in weekends if row.get("track_id")
+            )
+            drivers = [
+                row for row in drivers if str(row.get("id")) in driver_ids
+            ]
+            tracks = [
+                row for row in tracks if str(row.get("id")) in track_ids
+            ]
+            tyre_sets = [
+                row for row in tyre_sets
+                if str(row.get("vehicle_id") or "") in allowed_vehicle_ids
+            ]
+
         track_map = {}
         for row in tracks:
             legacy = row.get("legacy_id")
