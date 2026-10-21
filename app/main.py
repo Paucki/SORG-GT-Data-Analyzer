@@ -4281,6 +4281,17 @@ class MainWindow(QMainWindow):
             users_button.clicked.connect(self.open_user_admin)
             sidebar_layout.addWidget(users_button)
 
+            update_status_button = QPushButton("● Live Update-Status")
+            update_status_button.setToolTip(
+                "Admin-Liveansicht für Build, Release und Installer-Verfügbarkeit."
+            )
+            update_status_button.clicked.connect(
+                lambda: webbrowser.open(
+                    "https://paucki.github.io/SORG-GT-Data-Analyzer/update-status.html"
+                )
+            )
+            sidebar_layout.addWidget(update_status_button)
+
         logout_button = QPushButton("↪ Abmelden")
         logout_button.clicked.connect(self.logout_user)
         sidebar_layout.addWidget(logout_button)
