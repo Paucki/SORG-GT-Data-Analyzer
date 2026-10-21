@@ -1,32 +1,55 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0b0d10">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SORG GT">
-  <title>SORG GT Mobile</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08090b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SORG GT">
+<title>SORG GT Mobile</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="loginScreen" class="login-screen">
+<div id="splashScreen" class="splash-screen">
+  <div class="splash-glow"></div>
+  <div class="splash-brand">SORG <span>GT</span></div>
+  <div class="splash-sub">SPA-FRANCORCHAMPS</div>
+  <svg class="spa-stage" viewBox="0 0 420 300" aria-label="Rennwagen auf Spa-Francorchamps">
+    <defs>
+      <filter id="carGlow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <path id="spaPath" d="M58 224 C72 185,94 151,133 144 C168 138,177 102,205 85 C232 68,260 77,283 105 C304 132,342 125,357 151 C374 181,350 214,319 221 C282 229,257 252,219 246 C179 240,152 214,117 222 C94 227,76 237,58 224 Z"/>
+    </defs>
+    <use href="#spaPath" class="spa-track-shadow"/>
+    <use href="#spaPath" class="spa-track"/>
+    <text x="20" y="284" class="spa-caption">EAU ROUGE · RAIDILLON · SPA</text>
+    <g class="race-car" filter="url(#carGlow)">
+      <rect x="-14" y="-6" width="28" height="12" rx="4"/>
+      <rect x="-7" y="-10" width="14" height="7" rx="3" class="car-cabin"/>
+      <rect x="-15" y="-8" width="4" height="4" rx="1" class="car-wheel"/>
+      <rect x="11" y="-8" width="4" height="4" rx="1" class="car-wheel"/>
+      <rect x="-15" y="4" width="4" height="4" rx="1" class="car-wheel"/>
+      <rect x="11" y="4" width="4" height="4" rx="1" class="car-wheel"/>
+      <animateMotion dur="2.8s" repeatCount="indefinite" rotate="auto"><mpath href="#spaPath"/></animateMotion>
+    </g>
+  </svg>
+  <div class="splash-line"></div>
+  <div class="splash-status">Rennwochenende wird vorbereitet …</div>
+</div>
+
+<div id="loginScreen" class="login-screen hidden">
   <div class="login-wrap">
     <div class="login-brand">SORG <span>GT</span></div>
-    <div class="login-sub">MOBILE</div>
+    <div class="login-sub">DATA ANALYZER</div>
     <div class="login-card">
       <div class="eyebrow">ANMELDUNG</div>
       <h1>Willkommen zurück</h1>
       <p>Melde dich an und starte direkt ins Rennwochenende.</p>
-      <label>E-Mail
-        <input id="loginEmail" type="email" autocomplete="email" placeholder="E-Mail-Adresse">
-      </label>
-      <label>Passwort
-        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort">
-      </label>
+      <label>Benutzername<input id="loginUsername" autocomplete="username" placeholder="Benutzername"></label>
+      <label>Passwort<input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort"></label>
+      <label class="remember-row"><input id="rememberLogin" type="checkbox" checked><span>Angemeldet bleiben</span></label>
       <div id="loginStatus" class="login-status"></div>
       <button id="loginBtn" class="primary big">ANMELDEN</button>
       <button id="forgotBtn" class="ghost full">Passwort vergessen?</button>
@@ -41,13 +64,9 @@
     <div class="login-card">
       <div class="eyebrow">PASSWORT ZURÜCKSETZEN</div>
       <h1>Neues Passwort</h1>
-      <p>Vergib ein neues Passwort für deinen SORG-GT-Zugang.</p>
-      <label>Neues Passwort
-        <input id="newPassword" type="password" autocomplete="new-password" placeholder="Mindestens 6 Zeichen">
-      </label>
-      <label>Passwort wiederholen
-        <input id="newPassword2" type="password" autocomplete="new-password" placeholder="Passwort wiederholen">
-      </label>
+      <p>Vergib ein neues Passwort für deinen Zugang.</p>
+      <label>Neues Passwort<input id="newPassword" type="password" autocomplete="new-password" placeholder="Mindestens 6 Zeichen"></label>
+      <label>Passwort wiederholen<input id="newPassword2" type="password" autocomplete="new-password" placeholder="Passwort wiederholen"></label>
       <div id="recoveryStatus" class="login-status"></div>
       <button id="savePasswordBtn" class="primary big">PASSWORT SPEICHERN</button>
     </div>
@@ -55,124 +74,88 @@
 </div>
 
 <div id="app" class="hidden">
-  <header class="topbar">
-    <div><div class="brand">SORG <span>GT</span></div><div class="subtitle">MOBILE</div></div>
-    <button id="logoutBtn" class="badge logout-badge">ABMELDEN</button>
-  </header>
+<header class="topbar">
+  <div><div class="brand">SORG <span>GT</span></div><div class="subtitle">RENNBETRIEB</div></div>
+  <button id="logoutBtn" class="badge logout-badge">ABMELDEN</button>
+</header>
+<main>
+<section class="view active" data-view="home">
+  <div class="welcome">
+    <div class="eyebrow">RENNWOCHENENDE</div>
+    <h1>Bereit für die Boxengasse.</h1>
+    <p>Messungen, Fahrer und Fahrzeugdaten direkt aus der gemeinsamen Team-Datenbank.</p>
+    <button class="primary big" data-go="measure">+ NEUE MESSUNG</button>
+  </div>
+  <div class="quickstats">
+    <div><b id="statEntries">0</b><span>Messungen</span></div>
+    <div><b id="statCars">0</b><span>Fahrzeuge</span></div>
+    <div><b id="statDrivers">0</b><span>Fahrer</span></div>
+  </div>
+  <div class="section-row"><div class="section-title">Letzte Messung</div><button class="textbtn" data-go="history">Alle anzeigen</button></div>
+  <div id="lastEntry" class="empty-card">Noch keine Messung vorhanden.</div>
+</section>
 
-  <main>
-    <section class="view active" data-view="home">
-      <div class="welcome">
-        <div class="eyebrow">RENNBETRIEB</div>
-        <h1>Schnell erfassen.</h1>
-        <p>Die Daten kommen direkt aus derselben Cloud-Datenbank wie am PC.</p>
-        <button class="primary big" data-go="measure">+ NEUE MESSUNG</button>
-      </div>
+<section class="view" data-view="measure">
+  <div class="section-head"><button class="backbtn" data-go="home">‹</button><div><div class="eyebrow">ERFASSUNG</div><h2>Reifendruck</h2></div></div>
+  <form id="pressureForm">
+    <div class="context-card">
+      <label>Rennwochenende<select id="eventSelect" required></select></label>
+      <label>Session<select id="sessionSelect" required></select></label>
+      <label>Reifensatz<select id="tyreSetSelect" required></select></label>
+      <div id="sessionSummary" class="context-summary"></div>
+    </div>
+    <div class="pressure-title">HEISSDRUCK <span>bar</span></div>
+    <div class="pressure-grid">
+      <label class="pressure-box"><span>VL</span><small>Vorne links</small><input id="fl" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" required></label>
+      <label class="pressure-box"><span>VR</span><small>Vorne rechts</small><input id="fr" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" required></label>
+      <label class="pressure-box"><span>HL</span><small>Hinten links</small><input id="rl" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" required></label>
+      <label class="pressure-box"><span>HR</span><small>Hinten rechts</small><input id="rr" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" required></label>
+    </div>
+    <details class="note-details"><summary>+ Notiz hinzufügen</summary><textarea id="note" rows="3" placeholder="Besonderheiten …"></textarea></details>
+    <div id="saveStatus" class="login-status"></div>
+    <button class="primary big sticky-save" type="submit">MESSUNG SPEICHERN</button>
+  </form>
+</section>
 
-      <div class="quickstats">
-        <div><b id="statEntries">0</b><span>Messungen</span></div>
-        <div><b id="statCars">0</b><span>Fahrzeuge</span></div>
-        <div><b id="statDrivers">0</b><span>Fahrer</span></div>
-      </div>
+<section class="view" data-view="history">
+  <div class="section-head"><button class="backbtn" data-go="home">‹</button><div><div class="eyebrow">VERLAUF</div><h2>Messungen</h2></div></div>
+  <div id="allList" class="list empty">Noch keine Messungen vorhanden.</div>
+</section>
 
-      <div class="section-row">
-        <div class="section-title">Letzte Messung</div>
-        <button class="textbtn" data-go="history">Alle anzeigen</button>
-      </div>
-      <div id="lastEntry" class="empty-card">Noch keine Messung vorhanden.</div>
-    </section>
-
-    <section class="view" data-view="measure">
-      <div class="section-head">
-        <button class="backbtn" data-go="home">‹</button>
-        <div><div class="eyebrow">ERFASSUNG</div><h2>Reifendruck</h2></div>
-      </div>
-
-      <form id="pressureForm">
-        <div class="context-card">
-          <label>Rennwochenende
-            <select id="eventSelect" required></select>
-          </label>
-          <label>Session
-            <select id="sessionSelect" required></select>
-          </label>
-          <label>Reifensatz
-            <select id="tyreSetSelect" required></select>
-          </label>
-          <div id="sessionSummary" class="context-summary"></div>
+<section class="view" data-view="more">
+  <div class="section-head"><div><div class="eyebrow">MEHR</div><h2>Team & System</h2></div></div>
+  <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Cloud</div><p id="cloudInfo" class="muted">Verbindung wird geprüft …</p><button id="reloadBtn" class="ghost full">Jetzt synchronisieren</button></div></div>
+  <div id="adminUsersCard" class="admin-card open-card hidden">
+    <div class="admin-body">
+      <div class="section-title">Benutzerverwaltung</div>
+      <p class="muted">Teammitglieder anlegen, Personendaten pflegen, Rollen vergeben und Zugänge verwalten.</p>
+      <button id="loadUsersBtn" class="ghost full">Benutzer verwalten</button>
+      <div id="userAdminPanel" class="hidden">
+        <div class="admin-create">
+          <div class="two"><input id="adminFirstName" placeholder="Vorname"><input id="adminLastName" placeholder="Nachname"></div>
+          <input id="adminUsername" placeholder="Benutzername">
+          <input id="adminPhone" placeholder="Telefonnummer">
+          <input id="adminResidence" placeholder="Wohnort">
+          <select id="adminTeamRole"><option>Reifen</option><option>Mechaniker</option><option>Car Chief</option><option>Fahrer</option></select>
+          <select id="adminPermission"><option value="user">Benutzer</option><option value="admin">Admin</option></select>
+          <input id="adminPassword" type="password" placeholder="Startpasswort">
+          <button id="createUserBtn" class="primary">BENUTZER ANLEGEN</button>
         </div>
-
-        <div class="pressure-title">HEISSDRUCK <span>bar</span></div>
-        <div class="pressure-grid">
-          <label class="pressure-box"><span>VL</span><small>Vorne links</small><input id="fl" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" required></label>
-          <label class="pressure-box"><span>VR</span><small>Vorne rechts</small><input id="fr" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" required></label>
-          <label class="pressure-box"><span>HL</span><small>Hinten links</small><input id="rl" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" required></label>
-          <label class="pressure-box"><span>HR</span><small>Hinten rechts</small><input id="rr" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" required></label>
-        </div>
-
-        <details class="note-details">
-          <summary>+ Notiz hinzufügen</summary>
-          <textarea id="note" rows="3" placeholder="Besonderheiten …"></textarea>
-        </details>
-
-        <div id="saveStatus" class="login-status"></div>
-        <button class="primary big sticky-save" type="submit">MESSUNG SPEICHERN</button>
-      </form>
-    </section>
-
-    <section class="view" data-view="history">
-      <div class="section-head">
-        <button class="backbtn" data-go="home">‹</button>
-        <div><div class="eyebrow">VERLAUF</div><h2>Messungen</h2></div>
+        <div id="adminStatus" class="login-status"></div>
+        <div id="adminUserList" class="user-list"></div>
       </div>
-      <div id="allList" class="list empty">Noch keine Messungen vorhanden.</div>
-    </section>
-
-    <section class="view" data-view="more">
-      <div class="section-head"><div><div class="eyebrow">MEHR</div><h2>System</h2></div></div>
-      <div class="admin-card open-card">
-        <div class="admin-body">
-          <div class="section-title">Cloud</div>
-          <p id="cloudInfo" class="muted">Verbindung wird geprüft …</p>
-          <button id="reloadBtn" class="ghost full">Jetzt synchronisieren</button>
-        </div>
-      </div>
-      <div id="adminUsersCard" class="admin-card open-card hidden">
-        <div class="admin-body">
-          <div class="section-title">Benutzerverwaltung</div>
-          <p class="muted">Benutzer anlegen, Rollen ändern, Passwörter setzen und Zugänge deaktivieren.</p>
-          <button id="loadUsersBtn" class="ghost full">Benutzer verwalten</button>
-          <div id="userAdminPanel" class="hidden">
-            <div class="admin-create">
-              <input id="adminName" placeholder="Name">
-              <input id="adminUsername" placeholder="Benutzername">
-              <input id="adminPassword" type="password" placeholder="Startpasswort">
-              <select id="adminRole"><option value="user">Benutzer</option><option value="admin">Admin</option></select>
-              <button id="createUserBtn" class="primary">BENUTZER ANLEGEN</button>
-            </div>
-            <div id="adminStatus" class="login-status"></div>
-            <div id="adminUserList" class="user-list"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="admin-card open-card">
-        <div class="admin-body">
-          <div class="section-title">Installation</div>
-          <p class="muted">iPhone: Safari → Teilen → „Zum Home-Bildschirm“. Android: „App installieren“.</p>
-          <button id="installBtn" class="primary hidden">App installieren</button>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <nav class="bottomnav">
-    <button class="active" data-tab="home">⌂<span>Home</span></button>
-    <button class="measure-tab" data-tab="measure">＋<span>Messen</span></button>
-    <button data-tab="more">•••<span>Mehr</span></button>
-  </nav>
+    </div>
+  </div>
+  <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Konto</div><p class="muted">Auf diesem Gerät angemeldet bleiben oder den Zugang wechseln.</p><button id="logoutFullBtn" class="danger">ABMELDEN</button></div></div>
+  <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Installation</div><p class="muted">iPhone: Safari → Teilen → „Zum Home-Bildschirm“. Android: „App installieren“.</p><button id="installBtn" class="primary hidden">App installieren</button></div></div>
+</section>
+</main>
+<nav class="bottomnav">
+  <button class="active" data-tab="home">⌂<span>Home</span></button>
+  <button class="measure-tab" data-tab="measure">＋<span>Messen</span></button>
+  <button data-tab="more">•••<span>Mehr</span></button>
+</nav>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 </body>
