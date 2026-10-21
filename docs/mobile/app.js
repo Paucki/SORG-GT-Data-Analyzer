@@ -1,3 +1,6 @@
+const SUPABASE_URL='https://cdhfmhxhhtqqoetlferj.supabase.co';
+const SUPABASE_KEY='sb_publishable_r9xkC56K3zezl30297f1qQ_fsz6ztfl';
+const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const KEY='sorg_gt_mobile_v1';
 const state=JSON.parse(localStorage.getItem(KEY)||'{"entries":[],"cars":[],"drivers":[]}');
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -113,3 +116,26 @@ $('#installBtn').onclick=async()=>{
 
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
 render();
+async function showAuthState(){
+  const {data}=await supa.auth.getSession();
+  const logged=!!data.session;
+  $('#loginScreen').classList.toggle('hidden',logged);
+  $('#app').classList.toggle('hidden',!logged);
+}
+$('#loginBtn').onclick=async()=>{
+  const email=$('#loginEmail').value.trim(), password=$('#loginPassword').value;
+  $('#loginStatus').textContent='Anmeldung läuft …';
+  const {error}=await supa.auth.signInWithPassword({email,password});
+  $('#loginStatus').textContent=error?'Anmeldung fehlgeschlagen: '+error.message:'';
+  if(!error) showAuthState();
+};
+$('#signupBtn').onclick=async()=>{
+  const email=$('#loginEmail').value.trim(), password=$('#loginPassword').value;
+  if(password.length<6){$('#loginStatus').textContent='Passwort muss mindestens 6 Zeichen haben.';return}
+  $('#loginStatus').textContent='Konto wird angelegt …';
+  const {error}=await supa.auth.signUp({email,password});
+  $('#loginStatus').textContent=error?'Konto konnte nicht angelegt werden: '+error.message:'Konto angelegt. Falls nötig, bestätige die E-Mail.';
+};
+$('#logoutBtn').onclick=async()=>{await supa.auth.signOut();showAuthState()};
+supa.auth.onAuthStateChange(()=>showAuthState());
+showAuthState();
