@@ -77,7 +77,7 @@ async function initAccount(session,reveal=true){
   }
   teamId=data[0].team_id;currentRole=data[0].role||'user';
   $('#adminUsersCard').classList.toggle('hidden',currentRole!=='admin');
-  $('#adminUpdateMenu').classList.toggle('hidden',currentRole!=='admin');
+  $('#adminLiveMenu').classList.toggle('hidden',currentRole!=='admin');
   if(reveal){$('#loginScreen').classList.add('hidden');$('#recoveryScreen').classList.add('hidden');$('#app').classList.remove('hidden');}
   await loadCloud();
 }
