@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: profiles, error: profilesError } = await admin
       .from("profiles")
-      .select("id,username,display_name,phone,residence,team_role");
+      .select("id,username,display_name,first_name,last_name,phone,residence,team_role");
     if (profilesError) return json({ error: profilesError.message }, 400);
 
     const memberMap = new Map((members || []).map((m: any) => [m.user_id, m]));
@@ -73,7 +73,9 @@ Deno.serve(async (req: Request) => {
         return {
           id: u.id,
           username: p.username || "",
-          display_name: p.display_name || p.username || "Benutzer",
+          first_name: p.first_name || "",
+          last_name: p.last_name || "",
+          display_name: p.display_name || [p.first_name,p.last_name].filter(Boolean).join(" ") || p.username || "Benutzer",
           phone: p.phone || "",
           residence: p.residence || "",
           team_role: p.team_role || "Mechaniker",
@@ -90,7 +92,9 @@ Deno.serve(async (req: Request) => {
   if (action === "create") {
     const username = String(body.username || "").trim();
     const password = String(body.password || "");
-    const displayName = String(body.display_name || "").trim();
+    const firstName = String(body.first_name || "").trim();
+    const lastName = String(body.last_name || "").trim();
+    const displayName = [firstName,lastName].filter(Boolean).join(" ").trim() || String(body.display_name || "").trim();
     const phone = String(body.phone || "").trim();
     const residence = String(body.residence || "").trim();
     const teamRole = ["Reifen","Mechaniker","Car Chief","Fahrer"].includes(String(body.team_role))
@@ -127,6 +131,8 @@ Deno.serve(async (req: Request) => {
     const { error: profileError } = await admin.from("profiles").upsert({
       id: data.user.id,
       username,
+      first_name: firstName,
+      last_name: lastName,
       display_name: displayName || username,
       phone,
       residence,
@@ -151,7 +157,9 @@ Deno.serve(async (req: Request) => {
 
   if (action === "update_profile") {
     const username = String(body.username || "").trim();
-    const displayName = String(body.display_name || "").trim();
+    const firstName = String(body.first_name || "").trim();
+    const lastName = String(body.last_name || "").trim();
+    const displayName = [firstName,lastName].filter(Boolean).join(" ").trim() || String(body.display_name || "").trim();
     const phone = String(body.phone || "").trim();
     const residence = String(body.residence || "").trim();
     const teamRole = ["Reifen","Mechaniker","Car Chief","Fahrer"].includes(String(body.team_role))
@@ -170,6 +178,8 @@ Deno.serve(async (req: Request) => {
       .from("profiles")
       .update({
         username,
+        first_name: firstName,
+        last_name: lastName,
         display_name: displayName || username,
         phone,
         residence,
