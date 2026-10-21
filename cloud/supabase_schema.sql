@@ -5,7 +5,7 @@ create extension if not exists pgcrypto;
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null default '',
-  role text not null default 'user' check (role in ('admin','user')),
+  role text not null default 'admin' check (role in ('admin','user')),
   created_at timestamptz not null default now()
 );
 
@@ -18,7 +18,7 @@ create table if not exists public.teams (
 create table if not exists public.team_members (
   team_id uuid not null references public.teams(id) on delete cascade,
   user_id uuid not null references auth.users(id) on delete cascade,
-  role text not null default 'user' check (role in ('admin','user')),
+  role text not null default 'admin' check (role in ('admin','user')),
   created_at timestamptz not null default now(),
   primary key(team_id,user_id)
 );
@@ -39,10 +39,25 @@ returns trigger
 language plpgsql security definer
 set search_path = public
 as $$
+declare
+  new_team uuid;
 begin
-  insert into public.profiles(id,display_name)
-  values(new.id,coalesce(new.raw_user_meta_data->>'display_name',split_part(new.email,'@',1)))
+  insert into public.profiles(id,display_name,role)
+  values(
+    new.id,
+    coalesce(new.raw_user_meta_data->>'display_name',split_part(coalesce(new.email,''),'@',1)),
+    'admin'
+  )
   on conflict (id) do nothing;
+
+  if not exists(select 1 from public.team_members where user_id=new.id) then
+    insert into public.teams(name)
+    values('SORG Rennsport')
+    returning id into new_team;
+
+    insert into public.team_members(team_id,user_id,role)
+    values(new_team,new.id,'admin');
+  end if;
   return new;
 end;
 $$;
@@ -276,8 +291,11 @@ alter table public.profiles enable row level security;
 alter table public.teams enable row level security;
 alter table public.team_members enable row level security;
 
+drop policy if exists "own profile read" on public.profiles;
 create policy "own profile read" on public.profiles for select using (id=auth.uid());
+drop policy if exists "team read" on public.teams;
 create policy "team read" on public.teams for select using (public.is_team_member(id));
+drop policy if exists "team members read" on public.team_members;
 create policy "team members read" on public.team_members for select using (public.is_team_member(team_id));
 
 do $$
@@ -290,6 +308,10 @@ begin
   ]
   loop
     execute format('alter table public.%I enable row level security',t);
+    execute format('drop policy if exists "team_select" on public.%I',t);
+    execute format('drop policy if exists "team_insert" on public.%I',t);
+    execute format('drop policy if exists "team_update" on public.%I',t);
+    execute format('drop policy if exists "team_delete" on public.%I',t);
     execute format('create policy "team_select" on public.%I for select using (public.is_team_member(team_id))',t);
     execute format('create policy "team_insert" on public.%I for insert with check (public.is_team_member(team_id))',t);
     execute format('create policy "team_update" on public.%I for update using (public.is_team_member(team_id)) with check (public.is_team_member(team_id))',t);
