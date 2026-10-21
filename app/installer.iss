@@ -1,5 +1,7 @@
 #define MyAppName "SORG GT Data Analyzer"
-#define MyAppVersion "1.6.2"
+#ifndef MyAppVersion
+#define MyAppVersion "1.6.3"
+#endif
 #define MyAppPublisher "SORG Rennsport"
 #define MyAppExeName "SORG_GT_Data_Analyzer.exe"
 
