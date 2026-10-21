@@ -71,6 +71,21 @@ class CloudSync:
         except Exception:
             return default
 
+    def _remote_legacy_ids(self, table):
+        rows = self._request(
+            table,
+            query=urllib.parse.urlencode({
+                "team_id": f"eq.{self.team_id}",
+                "select": "id,legacy_id",
+            }),
+        ) or []
+        result = {}
+        for row in rows:
+            legacy = row.get("legacy_id")
+            if legacy is not None:
+                result[int(legacy)] = str(row["id"])
+        return result
+
     def _remote_meta(self, table):
         rows = self._request(
             table,
@@ -313,12 +328,20 @@ class CloudSync:
         tyre_sets = self._rows("tyre_sets")
         measurements = self._rows("tyre_measurements")
 
-        car_map = {int(r["id"]): self._uuid("vehicles", r["id"]) for r in cars}
-        driver_map = {int(r["id"]): self._uuid("drivers", r["id"]) for r in drivers}
-        track_map = {int(r["id"]): self._uuid("tracks", r["id"]) for r in tracks}
-        event_map = {int(r["id"]): self._uuid("race_weekends", r["id"]) for r in events}
-        session_map = {int(r["id"]): self._uuid("sessions", r["id"]) for r in sessions}
-        set_map = {int(r["id"]): self._uuid("tyre_sets", r["id"]) for r in tyre_sets}
+        remote_ids = {
+            "vehicles": self._remote_legacy_ids("vehicles"),
+            "drivers": self._remote_legacy_ids("drivers"),
+            "tracks": self._remote_legacy_ids("tracks"),
+            "race_weekends": self._remote_legacy_ids("race_weekends"),
+            "sessions": self._remote_legacy_ids("sessions"),
+            "tyre_sets": self._remote_legacy_ids("tyre_sets"),
+        }
+        car_map = {int(r["id"]): remote_ids["vehicles"].get(int(r["id"]), self._uuid("vehicles", r["id"])) for r in cars}
+        driver_map = {int(r["id"]): remote_ids["drivers"].get(int(r["id"]), self._uuid("drivers", r["id"])) for r in drivers}
+        track_map = {int(r["id"]): remote_ids["tracks"].get(int(r["id"]), self._uuid("tracks", r["id"])) for r in tracks}
+        event_map = {int(r["id"]): remote_ids["race_weekends"].get(int(r["id"]), self._uuid("race_weekends", r["id"])) for r in events}
+        session_map = {int(r["id"]): remote_ids["sessions"].get(int(r["id"]), self._uuid("sessions", r["id"])) for r in sessions}
+        set_map = {int(r["id"]): remote_ids["tyre_sets"].get(int(r["id"]), self._uuid("tyre_sets", r["id"])) for r in tyre_sets}
 
         event_track = {int(r["id"]): int(r["track_id"]) for r in events}
         session_by_id = {int(r["id"]): r for r in sessions}
