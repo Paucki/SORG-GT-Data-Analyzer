@@ -167,6 +167,7 @@ class CloudSync:
         try:
             self._push_core()
             self._pull_core()
+            self._pull_details()
             self._pull_measurements()
         finally:
             self._busy = False
@@ -722,6 +723,276 @@ class CloudSync:
                 errors.append(f"{table}: {error}")
         if errors:
             raise RuntimeError("Cloud-Sync teilweise fehlgeschlagen: " + " | ".join(errors[:4]))
+
+    def _pull_details(self):
+        """Zieht alle weiteren bearbeitbaren Rennbetriebsdaten aus der Cloud."""
+        def rows(table):
+            return self._request(
+                table,
+                query=urllib.parse.urlencode({
+                    "team_id": f"eq.{self.team_id}",
+                    "select": "*",
+                }),
+            ) or []
+
+        def id_map(table):
+            data = self._request(
+                table,
+                query=urllib.parse.urlencode({
+                    "team_id": f"eq.{self.team_id}",
+                    "select": "id,legacy_id",
+                }),
+            ) or []
+            return {
+                str(row["id"]): int(row["legacy_id"])
+                for row in data
+                if row.get("legacy_id") is not None
+            }
+
+        sessions = id_map("sessions")
+        tyre_sets = id_map("tyre_sets")
+        drivers = id_map("drivers")
+        tracks = id_map("tracks")
+        vehicles = id_map("vehicles")
+
+        for row in rows("session_changes"):
+            local_session = sessions.get(str(row.get("session_id")))
+            if local_session is None:
+                continue
+            legacy = row.get("legacy_id")
+            existing = (
+                self.db.get_session_change(int(legacy))
+                if legacy is not None else None
+            )
+            if existing is None:
+                local_id = self.db.save_session_change(
+                    None,
+                    local_session,
+                    row.get("category") or "",
+                    row.get("title") or "",
+                    row.get("description") or "",
+                )
+                if legacy is None:
+                    self._patch_legacy_id(
+                        "session_changes", str(row["id"]), local_id
+                    )
+            else:
+                remote_time = _stamp(row.get("updated_at") or row.get("created_at"))
+                local_time = _stamp(existing["updated_at"] or existing["created_at"])
+                if remote_time > local_time:
+                    self.db.save_session_change(
+                        int(existing["id"]),
+                        local_session,
+                        row.get("category") or "",
+                        row.get("title") or "",
+                        row.get("description") or "",
+                    )
+
+        for row in rows("session_setup_entries"):
+            local_session = sessions.get(str(row.get("session_id")))
+            if local_session is None:
+                continue
+            legacy = row.get("legacy_id")
+            existing = (
+                self.db.one(
+                    "SELECT * FROM session_setup_entries WHERE id=?",
+                    (int(legacy),),
+                )
+                if legacy is not None else None
+            )
+            if existing is None:
+                local_id = self.db.save_setup_entry(
+                    None,
+                    local_session,
+                    row.get("category") or "Setup",
+                    row.get("parameter_name") or "Parameter",
+                    row.get("old_value") or "",
+                    row.get("new_value") or "",
+                    row.get("unit") or "",
+                    row.get("notes") or "",
+                )
+                if legacy is None:
+                    self._patch_legacy_id(
+                        "session_setup_entries", str(row["id"]), local_id
+                    )
+            else:
+                remote_time = _stamp(row.get("updated_at") or row.get("created_at"))
+                local_time = _stamp(existing["updated_at"] or existing["created_at"])
+                if remote_time > local_time:
+                    self.db.save_setup_entry(
+                        int(existing["id"]),
+                        local_session,
+                        row.get("category") or "Setup",
+                        row.get("parameter_name") or "Parameter",
+                        row.get("old_value") or "",
+                        row.get("new_value") or "",
+                        row.get("unit") or "",
+                        row.get("notes") or "",
+                    )
+
+        for row in rows("session_media"):
+            local_session = sessions.get(str(row.get("session_id")))
+            if local_session is None:
+                continue
+            legacy = row.get("legacy_id")
+            existing = (
+                self.db.get_media_item(int(legacy))
+                if legacy is not None else None
+            )
+            if existing is None:
+                local_id = self.db.add_media_item(
+                    local_session,
+                    row.get("title") or "Datei",
+                    row.get("file_path") or "",
+                    row.get("media_type") or "",
+                    row.get("notes") or "",
+                )
+                if legacy is None:
+                    self._patch_legacy_id(
+                        "session_media", str(row["id"]), local_id
+                    )
+            else:
+                self.db.execute(
+                    """
+                    UPDATE session_media
+                    SET session_id=?, title=?, file_path=?, media_type=?, notes=?
+                    WHERE id=?
+                    """,
+                    (
+                        local_session,
+                        row.get("title") or "Datei",
+                        row.get("file_path") or "",
+                        row.get("media_type") or "",
+                        row.get("notes") or "",
+                        int(existing["id"]),
+                    ),
+                )
+
+        for row in rows("pressure_setups"):
+            legacy = row.get("legacy_id")
+            local_driver = drivers.get(str(row.get("driver_id")))
+            local_track = tracks.get(str(row.get("track_id")))
+            local_car = vehicles.get(str(row.get("vehicle_id")))
+            if local_driver is None or local_track is None or local_car is None:
+                continue
+            front = row.get("target_hot_front_bar")
+            rear = row.get("target_hot_rear_bar")
+            if front is None:
+                front = row.get("target_hot_vl") or row.get("target_hot_vr")
+            if rear is None:
+                rear = row.get("target_hot_hl") or row.get("target_hot_hr")
+            front = self._safe_float(front, 0)
+            rear = self._safe_float(rear, 0)
+            if front <= 0 or rear <= 0:
+                continue
+            local_id = self.db.save_driver_track_pressure_target(
+                local_driver,
+                local_track,
+                local_car,
+                front,
+                rear,
+                row.get("notes") or "",
+            )
+            if legacy is None and local_id:
+                self._patch_legacy_id(
+                    "pressure_setups", str(row["id"]), local_id
+                )
+
+        grouped = {}
+        for row in rows("session_drivers"):
+            local_session = sessions.get(str(row.get("session_id")))
+            local_driver = drivers.get(str(row.get("driver_id")))
+            if local_session is None or local_driver is None:
+                continue
+            grouped.setdefault(local_session, []).append(local_driver)
+        for local_session, local_drivers in grouped.items():
+            self.db.set_session_drivers(local_session, local_drivers)
+
+        for row in rows("tyre_notes"):
+            local_set = tyre_sets.get(str(row.get("tyre_set_id")))
+            if local_set is None:
+                continue
+            legacy = row.get("legacy_id")
+            existing = (
+                self.db.one("SELECT * FROM tyre_notes WHERE id=?", (int(legacy),))
+                if legacy is not None else None
+            )
+            values = (
+                local_set,
+                row.get("note_time"),
+                row.get("action"),
+                row.get("tyre_type"),
+                row.get("manufacturer"),
+                row.get("condition_before"),
+                row.get("condition_after"),
+                row.get("notes"),
+            )
+            if existing is None:
+                local_id = self.db.execute(
+                    """
+                    INSERT INTO tyre_notes (
+                        tyre_set_id, note_time, action, tyre_type, manufacturer,
+                        condition_before, condition_after, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    values,
+                )
+                if legacy is None:
+                    self._patch_legacy_id(
+                        "tyre_notes", str(row["id"]), local_id
+                    )
+            else:
+                self.db.execute(
+                    """
+                    UPDATE tyre_notes
+                    SET tyre_set_id=?, note_time=?, action=?, tyre_type=?,
+                        manufacturer=?, condition_before=?, condition_after=?, notes=?
+                    WHERE id=?
+                    """,
+                    values + (int(existing["id"]),),
+                )
+
+        for row in rows("pressure_recommendation_log"):
+            local_set = tyre_sets.get(str(row.get("tyre_set_id")))
+            if local_set is None:
+                continue
+            legacy = row.get("legacy_id")
+            existing = (
+                self.db.one(
+                    "SELECT id FROM pressure_recommendation_log WHERE id=?",
+                    (int(legacy),),
+                )
+                if legacy is not None else None
+            )
+            if existing is None:
+                local_id = self.db.execute(
+                    """
+                    INSERT INTO pressure_recommendation_log (
+                        tyre_set_id, position, target_hot_pressure_bar,
+                        cold_tyre_temp_c, expected_hot_tyre_temp_c,
+                        ambient_pressure_bar, history_correction_bar,
+                        recommended_cold_pressure_bar, model_version, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        local_set,
+                        row.get("position"),
+                        row.get("target_hot_pressure_bar"),
+                        row.get("cold_tyre_temp_c"),
+                        row.get("expected_hot_tyre_temp_c"),
+                        row.get("ambient_pressure_bar"),
+                        row.get("history_correction_bar"),
+                        row.get("recommended_cold_pressure_bar"),
+                        row.get("model_version"),
+                        row.get("created_at"),
+                    ),
+                )
+                if legacy is None:
+                    self._patch_legacy_id(
+                        "pressure_recommendation_log",
+                        str(row["id"]),
+                        local_id,
+                    )
 
     def _pull_measurements(self):
         cloud_sets = self._request(
