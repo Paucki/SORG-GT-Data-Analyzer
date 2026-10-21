@@ -71,6 +71,25 @@ class CloudSync:
         except Exception:
             return default
 
+    @staticmethod
+    def _safe_float(value, default=0.0):
+        try:
+            if value is None or str(value).strip() == "":
+                return default
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
+    @staticmethod
+    def _safe_int(value, default=0):
+        try:
+            if value is None or str(value).strip() == "":
+                return default
+            return int(float(value))
+        except (TypeError, ValueError):
+            return default
+
+
     def _remote_legacy_ids(self, table):
         rows = self._request(
             table,
@@ -100,10 +119,6 @@ class CloudSync:
         if not records:
             return
 
-        # PostgreSQL/Supabase setzt created_at/updated_at selbst per Default.
-        # Lokale SQLite-Bestandsdaten haben updated_at häufig noch NULL.
-        # Ein explizites JSON-null überschreibt den DB-Default und verletzt
-        # die NOT-NULL-Constraints. Fehlende Zeitstempel daher nicht senden.
         cleaned = []
         for record in records:
             item = dict(record)
@@ -113,13 +128,37 @@ class CloudSync:
                 item.pop("updated_at", None)
             cleaned.append(item)
 
-        self._request(
-            table,
-            method="POST",
-            query="on_conflict=id",
-            body=cleaned,
-            prefer="resolution=merge-duplicates,return=minimal",
-        )
+        try:
+            self._request(
+                table,
+                method="POST",
+                query="on_conflict=id",
+                body=cleaned,
+                prefer="resolution=merge-duplicates,return=minimal",
+            )
+            return
+        except RuntimeError as batch_error:
+            # Ein fehlerhafter alter Datensatz darf nicht den kompletten
+            # Stammdaten-Sync blockieren. Daher einzeln erneut versuchen.
+            failures = []
+            for item in cleaned:
+                try:
+                    self._request(
+                        table,
+                        method="POST",
+                        query="on_conflict=id",
+                        body=[item],
+                        prefer="resolution=merge-duplicates,return=minimal",
+                    )
+                except RuntimeError as error:
+                    failures.append(
+                        f"legacy_id={item.get('legacy_id')}: {error}"
+                    )
+            if failures:
+                raise RuntimeError(
+                    f"{table}: {len(failures)} Datensatz/Datensätze konnten nicht synchronisiert werden. "
+                    + " | ".join(failures[:3])
+                ) from batch_error
 
     def sync(self):
         if not self.enabled or self._busy:
@@ -378,10 +417,12 @@ class CloudSync:
                 "name": f'{self._get(r,"manufacturer","")} {self._get(r,"model","")}'.strip() or f"Fahrzeug {rid}",
                 "manufacturer": self._get(r,"manufacturer",""), "model": self._get(r,"model",""),
                 "vehicle_class": self._get(r,"car_class"), "start_number": self._get(r,"start_number"),
-                "year": self._get(r,"year",0), "weight_kg": self._get(r,"weight_kg",0),
-                "horsepower": self._get(r,"horsepower",0), "drive_type": self._get(r,"drive_type"),
-                "target_hot_front_bar": self._get(r,"target_hot_front_bar",0),
-                "target_hot_rear_bar": self._get(r,"target_hot_rear_bar",0),
+                "year": self._safe_int(self._get(r,"year",0)),
+                "weight_kg": self._safe_float(self._get(r,"weight_kg",0)),
+                "horsepower": self._safe_float(self._get(r,"horsepower",0)),
+                "drive_type": self._get(r,"drive_type"),
+                "target_hot_front_bar": self._safe_float(self._get(r,"target_hot_front_bar",0)),
+                "target_hot_rear_bar": self._safe_float(self._get(r,"target_hot_rear_bar",0)),
                 "notes": self._get(r,"notes"), "created_at": self._get(r,"created_at"),
                 "updated_at": self._get(r,"updated_at"),
             })
@@ -404,9 +445,12 @@ class CloudSync:
             payloads["tracks"].append({
                 "id": track_map[rid], "legacy_id": rid, "team_id": self.team_id,
                 "name": self._get(r,"name","") or f"Strecke {rid}",
-                "country": self._get(r,"country"), "length_km": self._get(r,"length_km"),
-                "corners": self._get(r,"corners",0), "address": self._get(r,"address"),
-                "latitude": self._get(r,"latitude"), "longitude": self._get(r,"longitude"),
+                "country": self._get(r,"country"),
+                "length_km": self._safe_float(self._get(r,"length_km",0)),
+                "corners": self._safe_int(self._get(r,"corners",0)),
+                "address": self._get(r,"address"),
+                "latitude": None if self._get(r,"latitude") in (None, "") else self._safe_float(self._get(r,"latitude")),
+                "longitude": None if self._get(r,"longitude") in (None, "") else self._safe_float(self._get(r,"longitude")),
                 "notes": self._get(r,"notes"), "created_at": self._get(r,"created_at"),
                 "updated_at": self._get(r,"updated_at"),
             })
