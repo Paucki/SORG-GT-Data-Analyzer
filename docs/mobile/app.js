@@ -133,26 +133,282 @@ async function initAccount(session){
 }
 
 $('#loginBtn').onclick=async()=>{
-  const email=$('#loginEmail').value.trim(), password=$('#loginPassword').value;
-  if(!email||!password){$('#loginStatus').textContent='Bitte E-Mail und Passwort eingeben.';return}
+  const username=$('#loginUsername').value.trim(), password=$('#loginPassword').value;
+  if(!username||!password){$('#loginStatus').textContent='Bitte Benutzername und Passwort eingeben.';return}
   $('#loginBtn').disabled=true;
   $('#loginStatus').textContent='Anmeldung läuft …';
-  const {data,error}=await supa.auth.signInWithPassword({email,password});
-  $('#loginBtn').disabled=false;
-  if(error){$('#loginStatus').textContent='Anmeldung fehlgeschlagen: '+error.message;return}
-  $('#loginStatus').textContent='';
-  await initAccount(data.session);
+  try{
+    const response=await fetch(SUPABASE_URL+'/functions/v1/auth-login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
+      body:JSON.stringify({username,password})
+    });
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'Anmeldung fehlgeschlagen');
+    const {data:setData,error:setError}=await supa.auth.setSession({
+      access_token:data.access_token,
+      refresh_token:data.refresh_token
+    });
+    if(setError)throw setError;
+    $('#loginStatus').textContent='';
+    await initAccount(setData.session);
+  }catch(error){
+    $('#loginStatus').textContent='Anmeldung fehlgeschlagen: '+error.message;
+  }finally{
+    $('#loginBtn').disabled=false;
+  }
+};
+$('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginBtn').click()});
+$('#savePasswordBtn').onclick=async()=>{
+  const p1=$('#newPassword').value, p2=$('#newPassword2').value;
+  if(p1.length<6){$('#recoveryStatus').textContent='Passwort muss mindestens 6 Zeichen haben.';return}
+  if(p1!==p2){$('#recoveryStatus').textContent='Die Passwörter stimmen nicht überein.';return}
+  const {error}=await supa.auth.updateUser({password:p1});
+  if(error){$('#recoveryStatus').textContent='Passwort konnte nicht geändert werden: '+error.message;return}
+  $('#recoveryStatus').textContent='Passwort wurde geändert.';
+  setTimeout(async()=>{const {data}=await supa.auth.getSession();await initAccount(data.session)},500);
 };
 
-$('#forgotBtn').onclick=async()=>{
-  const email=$('#loginEmail').value.trim();
-  if(!email){$('#loginStatus').textContent='Bitte zuerst deine E-Mail-Adresse eingeben.';return}
-  $('#loginStatus').textContent='Reset-Link wird gesendet …';
-  const redirectTo=location.origin+location.pathname;
-  const {error}=await supa.auth.resetPasswordForEmail(email,{redirectTo});
-  $('#loginStatus').textContent=error
-    ? 'Passwort-Reset nicht möglich: '+error.message
-    : 'Reset-Link wurde per E-Mail gesendet.';
+$('#logoutBtn').onclick=async()=>{await supa.auth.signOut();teamId='';currentRole='user';await initAccount(null)};
+$('#reloadBtn').onclick=()=>loadCloud();
+
+function populateMeasure(){
+  const ev=$('#eventSelect');
+  const current=ev.value;
+  ev.innerHTML=cloud.events.length
+    ? cloud.events.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join('')
+    : '<option value="">Noch kein Rennwochenende am PC angelegt</option>';
+  if(current && cloud.events.some(x=>x.id===current))ev.value=current;
+  populateSessions();
+}
+function populateSessions(){
+  const eventId=$('#eventSelect').value;
+  const list=cloud.sessions.filter(x=>x.race_weekend_id===eventId);
+  const el=$('#sessionSelect'), current=el.value;
+  el.innerHTML=list.length
+    ? list.map(x=>`<option value="${x.id}">${esc(sessionName(x))}</option>`).join('')
+    : '<option value="">Noch keine Session vorhanden</option>';
+  if(current && list.some(x=>x.id===current))el.value=current;
+  populateSets();
+}
+function populateSets(){
+  const session=cloud.sessions.find(x=>x.id===$('#sessionSelect').value);
+  const list=cloud.sets.filter(x=>{
+    if(!session)return false;
+    return x.race_weekend_id===session.race_weekend_id && (!x.vehicle_id || x.vehicle_id===session.vehicle_id);
+  });
+  const el=$('#tyreSetSelect'), current=el.value;
+  el.innerHTML=list.length
+    ? list.map(x=>`<option value="${x.id}">${esc(setName(x.id))}</option>`).join('')
+    : '<option value="">Noch kein Reifensatz vorhanden</option>';
+  if(current && list.some(x=>x.id===current))el.value=current;
+  fillExisting();
+}
+function fillExisting(){
+  const session=cloud.sessions.find(x=>x.id===$('#sessionSelect').value);
+  const setId=$('#tyreSetSelect').value;
+  $('#sessionSummary').textContent=session
+    ? [eventName(session.race_weekend_id),vehicleName(session.vehicle_id),driverName(session.driver_id)].join(' · ')
+    : 'Bitte Event, Session und Reifensatz am PC anlegen.';
+  const ids={vl:'#fl',vr:'#fr',hl:'#rl',hr:'#rr'};
+  Object.values(ids).forEach(id=>$(id).value='');
+  for(const [pos,id] of Object.entries(ids)){
+    const r=cloud.measurements.find(x=>x.session_id===session?.id && x.tyre_set_id===setId && x.position===pos);
+    if(r)$(id).value=r.measured_hot_pressure ?? '';
+  }
+}
+$('#eventSelect').onchange=populateSessions;
+$('#sessionSelect').onchange=populateSets;
+$('#tyreSetSelect').onchange=fillExisting;
+
+$('#pressureForm').onsubmit=async e=>{
+  e.preventDefault();
+  const sessionId=$('#sessionSelect').value;
+  const setId=$('#tyreSetSelect').value;
+  if(!teamId||!sessionId||!setId){$('#saveStatus').textContent='Bitte zuerst Event, Session und Reifensatz auswählen.';return}
+  const vals={vl:$('#fl').value,vr:$('#fr').value,hl:$('#rl').value,hr:$('#rr').value};
+  const note=$('#note').value.trim();
+  $('#saveStatus').textContent='Wird gespeichert …';
+  for(const [position,value] of Object.entries(vals)){
+    const pressure=Number(value);
+    const existing=cloud.measurements.find(x=>x.session_id===sessionId && x.tyre_set_id===setId && x.position===position);
+    const payload={
+      team_id:teamId,
+      session_id:sessionId,
+      tyre_set_id:setId,
+      position,
+      measured_hot_pressure:pressure,
+      notes:note||existing?.notes||null,
+      updated_at:new Date().toISOString()
+    };
+    let result;
+    if(existing){
+      result=await supa.from('tyre_measurements').update(payload).eq('id',existing.id);
+    }else{
+      result=await supa.from('tyre_measurements').insert(payload);
+    }
+    if(result.error){$('#saveStatus').textContent='Speichern fehlgeschlagen: '+result.error.message;return}
+  }
+  $('#note').value='';
+  $('#saveStatus').textContent='Gespeichert.';
+  await loadCloud();
+  go('home');
+};
+
+async function adminCall(payload){
+  const {data,error}=await supa.functions.invoke('admin-users',{body:payload});
+  if(error)throw new Error(error.message||'Admin-Funktion fehlgeschlagen');
+  if(data?.error)throw new Error(data.error);
+  return data||{};
+}
+
+async function loadAdminUsers(){
+  $('#adminStatus').textContent='Benutzer werden geladen …';
+  try{
+    const data=await adminCall({action:'list'});
+    const users=data.users||[];
+    $('#adminUserList').innerHTML=users.map(u=>`
+      <div class="user-admin-row" data-id="${u.id}">
+        <div class="user-admin-head">
+          <div>
+            <b>${esc(u.display_name||u.username)}</b>
+            <span>@${esc(u.username)} · ${esc(u.team_role||'Mechaniker')}</span>
+            <span>${esc(u.phone||'Keine Telefonnummer')} · ${esc(u.residence||'Kein Wohnort')}</span>
+          </div>
+          <span class="user-state ${u.inactive?'off':''}">${u.inactive?'INAKTIV':'AKTIV'}</span>
+        </div>
+        <div class="user-admin-actions">
+          <select class="teamRoleSelect">
+            <option ${u.team_role==='Reifen'?'selected':''}>Reifen</option>
+            <option ${u.team_role==='Mechaniker'?'selected':''}>Mechaniker</option>
+            <option ${u.team_role==='Car Chief'?'selected':''}>Car Chief</option>
+            <option ${u.team_role==='Fahrer'?'selected':''}>Fahrer</option>
+          </select>
+          <select class="permissionSelect">
+            <option value="user" ${u.permission==='user'?'selected':''}>Benutzer</option>
+            <option value="admin" ${u.permission==='admin'?'selected':''}>Admin</option>
+          </select>
+          <button class="ghost compact profileBtn">Daten bearbeiten</button>
+          <button class="ghost compact permBtn">Berechtigung speichern</button>
+          <button class="ghost compact pwBtn">Passwort setzen</button>
+          <button class="ghost compact activeBtn">${u.inactive?'Aktivieren':'Deaktivieren'}</button>
+        </div>
+      </div>
+    `).join('')||'<div class="empty">Noch keine Benutzer.</div>';
+
+    $$('.user-admin-row').forEach(row=>{
+      const id=row.dataset.id;
+      const user=users.find(u=>u.id===id);
+      row.querySelector('.profileBtn').onclick=async()=>{
+        const display_name=prompt('Name:',user.display_name||''); if(display_name===null)return;
+        const username=prompt('Benutzername:',user.username||''); if(username===null)return;
+        const phone=prompt('Telefonnummer:',user.phone||''); if(phone===null)return;
+        const residence=prompt('Wohnort:',user.residence||''); if(residence===null)return;
+        try{
+          await adminCall({
+            action:'update_profile',user_id:id,display_name,username,phone,residence,
+            team_role:row.querySelector('.teamRoleSelect').value
+          });
+          await loadAdminUsers();
+        }catch(e){$('#adminStatus').textContent=e.message}
+      };
+      row.querySelector('.permBtn').onclick=async()=>{
+        try{
+          await adminCall({action:'set_role',user_id:id,role:row.querySelector('.permissionSelect').value});
+          await loadAdminUsers();
+        }catch(e){$('#adminStatus').textContent=e.message}
+      };
+      row.querySelector('.pwBtn').onclick=async()=>{
+        const pw=prompt('Neues Passwort eingeben:');
+        if(pw===null)return;
+        try{
+          await adminCall({action:'set_password',user_id:id,password:pw});
+          $('#adminStatus').textContent='Passwort wurde geändert.';
+        }catch(e){$('#adminStatus').textContent=e.message}
+      };
+      row.querySelector('.activeBtn').onclick=async()=>{
+        const inactive=row.querySelector('.user-state').classList.contains('off');
+        try{
+          await adminCall({action:'set_active',user_id:id,active:inactive});
+          await loadAdminUsers();
+        }catch(e){$('#adminStatus').textContent=e.message}
+      };
+    });
+    $('#adminStatus').textContent=users.length+' Benutzer';
+  }catch(e){
+    $('#adminStatus').textContent=e.message;
+  }
+}
+
+$('#loadUsersBtn').onclick=async()=>{
+  $('#userAdminPanel').classList.remove('hidden');
+  await loadAdminUsers();
+};
+
+$('#createUserBtn').onclick=async()=>{
+  const payload={
+    action:'create',
+    display_name:$('#adminName').value.trim(),
+    username:$('#adminUsername').value.trim(),
+    phone:$('#adminPhone').value.trim(),
+    residence:$('#adminResidence').value.trim(),
+    team_role:$('#adminTeamRole').value,
+    permission:$('#adminPermission').value,
+    password:$('#adminPassword').value
+  };
+  try{
+    await adminCall(payload);
+    $('#adminName').value='';
+    $('#adminUsername').value='';
+    $('#adminPhone').value='';
+    $('#adminResidence').value='';
+    $('#adminPassword').value='';
+    $('#adminStatus').textContent='Benutzer wurde angelegt.';
+    await loadAdminUsers();
+  }catch(e){
+    $('#adminStatus').textContent=e.message;
+  }
+};
+
+
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;$('#installBtn').classList.remove('hidden');
+});
+$('#installBtn').onclick=async()=>{
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  $('#installBtn').classList.add('hidden');
+};
+
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+supa.auth.onAuthStateChange(async(event,session)=>{
+  if(event==='PASSWORD_RECOVERY'){
+    $('#loginScreen').classList.add('hidden');
+    $('#app').classList.add('hidden');
+    $('#recoveryScreen').classList.remove('hidden');
+    return;
+  }
+  await initAccount(session);
+});
+(async()=>{const {data}=await supa.auth.getSession();await initAccount(data.session)})();$('#forgotBtn').onclick=async()=>{
+  const username=$('#loginUsername').value.trim();
+  if(!username){$('#loginStatus').textContent='Bitte zuerst deinen Benutzernamen eingeben.';return}
+  $('#loginStatus').textContent='Wiederherstellung wird geprüft …';
+  try{
+    const response=await fetch(SUPABASE_URL+'/functions/v1/auth-recover',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
+      body:JSON.stringify({username,redirect_to:location.origin+location.pathname})
+    });
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'Passwort-Reset nicht möglich');
+    $('#loginStatus').textContent='Falls möglich, wurde eine Reset-Nachricht versendet. Sonst kann ein Admin dein Passwort direkt ändern.';
+  }catch(error){
+    $('#loginStatus').textContent='Passwort-Reset nicht möglich: '+error.message;
+  }
 };
 $('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginBtn').click()});
 $('#savePasswordBtn').onclick=async()=>{
