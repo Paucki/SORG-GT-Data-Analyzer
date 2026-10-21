@@ -22,7 +22,17 @@ $$('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go));
 function vehicleName(id){const v=cloud.vehicles.find(x=>x.id===id);return v?.name||[v?.manufacturer,v?.model].filter(Boolean).join(' ')||'Fahrzeug'}
 function driverName(id){const d=cloud.drivers.find(x=>x.id===id);return d?.name||[d?.first_name,d?.last_name].filter(Boolean).join(' ')||'Ohne Fahrer'}
 function eventName(id){return cloud.events.find(x=>x.id===id)?.name||'Rennwochenende'}
-function setName(id){const s=cloud.sets.find(x=>x.id===id);return s?'Reifensatz '+s.set_number+(s.compound?' · '+s.compound:''):'Reifensatz'}
+function tyreTypeLabel(value){
+  const v=String(value||'').trim().toLowerCase();
+  if(!v)return 'Reifentyp unbekannt';
+  if(v.includes('rain')||v.includes('regen')||v.includes('wet'))return 'Regenreifen';
+  if(v.includes('slick'))return 'Slick';
+  return value;
+}
+function setName(id){
+  const s=cloud.sets.find(x=>x.id===id);
+  return s?'Satz '+s.set_number+' · '+tyreTypeLabel(s.tyre_type):'Reifensatz';
+}
 function sessionName(s){return s?[s.session_type||'Session',driverName(s.driver_id),vehicleName(s.vehicle_id)].join(' · '):'Session'}
 
 function groupedMeasurements(){
