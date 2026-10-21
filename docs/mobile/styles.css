@@ -97,3 +97,8 @@ input,select,textarea{background:#0a0d11;border-color:#303842;color:#f7f8fa}.inp
 .vehicle-checks{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
 .vehicle-checks label{display:flex;align-items:center;gap:8px;color:#e7ebef;font-size:13px}
 .vehicle-checks input{width:18px;height:18px}
+
+/* V1.8.7 GLOBAL DELETE + AUTO SYNC */
+.shared-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.shared-row>span{min-width:0;flex:1}
+.sharedDelete{flex:0 0 auto}
