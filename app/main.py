@@ -5,6 +5,7 @@ import webbrowser
 import csv
 import os
 import shutil
+import subprocess
 import json
 import hashlib
 import base64
@@ -4275,6 +4276,10 @@ class MainWindow(QMainWindow):
             users_button.clicked.connect(self.open_user_admin)
             sidebar_layout.addWidget(users_button)
 
+        logout_button = QPushButton("↪ Abmelden")
+        logout_button.clicked.connect(self.logout_user)
+        sidebar_layout.addWidget(logout_button)
+
         sidebar_layout.addStretch()
 
         root.addWidget(sidebar)
@@ -4305,6 +4310,27 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Benutzerverwaltung", "Nur Administratoren dürfen Benutzer verwalten.")
             return
         UserAdminDialog(self.user_session, self).exec()
+
+    def logout_user(self):
+        if QMessageBox.question(
+            self,
+            "Abmelden",
+            "Möchtest du dich wirklich abmelden?",
+        ) != QMessageBox.Yes:
+            return
+        if self.update_client is not None:
+            self.update_client.clear_saved_session()
+        try:
+            remembered = APP_DATA_FOLDER / "remembered_user.txt"
+            if remembered.exists():
+                remembered.unlink()
+        except Exception:
+            pass
+        try:
+            subprocess.Popen([sys.executable, *sys.argv[1:]], shell=False)
+        except Exception:
+            pass
+        QApplication.quit()
 
     def _load_expert_auth(self):
         try:
@@ -5174,13 +5200,16 @@ def main() -> int:
             data_folder=APP_DATA_FOLDER,
         )
 
-        login = LoginDialog(update_client)
-        result = login.exec()
+        user_session = update_client.restore_saved_session()
 
-        if result == LoginDialog.Rejected:
-            return 0
+        if user_session is None:
+            login = LoginDialog(update_client)
+            result = login.exec()
 
-        user_session = login.user_session
+            if result == LoginDialog.Rejected:
+                return 0
+
+            user_session = login.user_session
 
         window = MainWindow(
             update_client=update_client,
