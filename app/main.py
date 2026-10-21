@@ -77,7 +77,7 @@ from dialogs import (
 )
 
 
-APP_NAME = "SORG GT Data Analyzer"
+APP_NAME = "SORG GT Data Analyzer"\nNORDSCHLEIFE_TRACK_B64 = "iVBORw0KGgoAAAANSUhEUgAAAMwAAADACAAAAABti9NVAAAFHklEQVR4Ad3BC3Ybh4JEMdz9L7qGkvM8ia1Ps0WRPALyg+QHyQ+S7zbkLvLNJpN7yLcaYbmHfKMhF8s95FvML3m13ENuby7y/yb3kFsb8h+Te8itTf4wuYecN/nL5E+Te8hZ8yJ/mPxpcg85acLIv438ZbmHnLS8GLmYiwz5y/IVyyE5Z/LLNP+Sv01Om1/ymZwz+ceQV3ORv0zOmjAX+VjOmfxj5LfJ3yYnTV6NfCinTN4x+dvknOV/Jh/JCSNXGjlj+W3kfbnakKuNnDD5bch7crXJKUMOGfll8m+Td+Rak7PmX/Km+UdeTP5r8rZcbfJl8yp/mBcxuZj8YfK2XG9yE0P+bfJq8mLyp+VtOWEucguT30ZeTS5G/rK8LedMbmLyj5EXI3ORNyxvy0mTmxh5MXk1v+RNk7flrOVG5pe8mFd5z+RtOWu5mSG/LJP3Le/IWcu3GPKB5R05a/kWQz4weVtOmjzIkDfkpOVxJm/IOZMHmvwtp0weafK3nDF5qMnfcsLksSZ/y/UmDzNheUOuNnmY+SVvyLUmDzN5X640eZzJ+3KVkceZfCDXmDzQ5CO5xuSBJh/JNSaPM/lQrrI8zuRDucbkcSYfyhUmDzT5UK6wPNLkQ7nC8kiTD+UKyyNNPpQrLI80+VCOmzzS5EM5bvJIy8dy3PJAIx/LYZNHmYt8IoctjzLyuRw1eZDJETlo8iCTQ3LM5FEmh+SQyaNMjskRk4dZDsrnRh5mclA+NfIwk6PymcnjjByVj408zshh+ciQx5lcIe8bckcjvw25Rt4z5J7mRV7MRa6T9yx3NWL+J1fLe5Z7mrwackreM3I/k6/K+0buZvJF+cjIvYx8ST40uZu5yHn52OSORk7LJyb3NDkrn5jc1eSkfGZyT5OT8pnJXS0n5VOTe1pOyqcmdzQ5KZ+b3M3krHxuci8jZ+WA5U4m5+WAyT2MfEGOWL7fyJfkiOXbTb4oR0y+18hX5YjJdxr5uhwx+T4jt5BDlm8zchM5ZPkmIzeSQ5bvMXIrOWT5DiO3k0OW2xu5pRyy3NzITeWIyY2N3FiOmNzWyK3liOWmRm4vB0xuafIdcsDkdka+RQ5YbmIy8k1ywHIT0+Tb5IDlNka+Tw5YbmEu8n1ywOTrRpPvkyMmXzTyzXLI5CtGvl0OmXzByPfLMZOzRu4hB03OGbmLHDU5Y3InOWxyvcm95LjJtSZ3kyuMXGVyP7nK5ArTcje5zuSwyT3lSpOjlrvKtSbHTO4q15p8YC2vJveVq82LvG1NXix3listhrxtLS8md5YrzUUmf5nMRUzuLdeaFpM/DK21TO4uZ03+Y5oXMbm/nDX5j8mLxeT+ctr8IxcjhoY8QM6bXMwvGZqLPEJuYGj+kUfJrYyMPExuZGTkcfJ18yojD5QvmVd5MfJI+YqR30YeKV8w+W1e5IFy3uS3IcsD5bTJb3PR5IFy1uT/jYY8UE6aMHIxcrE8UM6ZzKsYuZg8UE6ZmLCMPIGcspgwjTyDnDIxskaeQs4ZMa/yHHLWZC7yLHLatDyTnLYszyRnTZNnkrOmyTPJWcvyVHLSNHkqOWmaPJWctCzPJScty3PJOdPIU8k5kyFPJOdMGHkeOWm5mDyPnLQYeSI5ZzLyTHLKNPJccsY08mRywlzk6eR6c5Hnk6tNkyeUq02TJ5SrDXlG+UHyg+QHyQ+SHyQ/SH6Q/CD5QfKD5AfJD5IfJD9IfpD8IPlB8oPkB8kPkh8kP0h+kP8Ds5ew0KaKRtYAAAAASUVORK5CYII="
 APP_DATA_FOLDER = Path(
     os.environ.get(
         "LOCALAPPDATA",
@@ -4545,15 +4545,27 @@ class MainWindow(QMainWindow):
 
 
 class NuerburgringSplash(QWidget):
-    """Kurzer Desktop-Startbildschirm mit animiertem Rennwagen am Nürburgring."""
+    """Moderner Desktop-Startbildschirm mit der korrekten Nordschleifen-Silhouette."""
+
+    ROUTE = [
+        (52, 168), (66, 148), (72, 137), (84, 129), (101, 118), (118, 108),
+        (138, 97), (151, 88), (139, 82), (158, 74), (174, 57), (180, 42),
+        (178, 28), (168, 19), (155, 18), (145, 24), (130, 22), (116, 25),
+        (106, 18), (104, 5), (99, 4), (97, 13), (88, 17), (77, 12),
+        (66, 13), (55, 22), (49, 34), (48, 48), (39, 61), (27, 70),
+        (34, 82), (37, 99), (45, 113), (57, 124), (68, 133), (63, 145),
+        (57, 154), (52, 168),
+    ]
 
     def __init__(self):
         super().__init__(None, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setFixedSize(900, 520)
+        self.setFixedSize(920, 540)
         self.progress = 0.0
         self._timer = QTimer(self)
         self._timer.setInterval(16)
         self._timer.timeout.connect(self._advance_car)
+        self.track_pixmap = QPixmap()
+        self.track_pixmap.loadFromData(base64.b64decode(NORDSCHLEIFE_TRACK_B64), "PNG")
 
         screen = QApplication.primaryScreen()
         if screen is not None:
@@ -4569,119 +4581,111 @@ class NuerburgringSplash(QWidget):
         self._timer.start()
 
     def _advance_car(self):
-        self.progress = (self.progress + 0.0036) % 1.0
+        self.progress = (self.progress + 0.0028) % 1.0
         self.update()
 
-    def _track_path(self) -> QPainterPath:
-        # Stilisierte Nordschleife (nicht GP-Strecke): langgezogen, eng und unregelmäßig.
-        path = QPainterPath(QPointF(135, 361))
-        path.cubicTo(105, 338, 96, 300, 111, 270)
-        path.cubicTo(126, 239, 161, 235, 168, 207)
-        path.cubicTo(176, 177, 143, 158, 162, 128)
-        path.cubicTo(183, 95, 228, 110, 252, 84)
-        path.cubicTo(279, 56, 316, 63, 333, 96)
-        path.cubicTo(348, 126, 335, 160, 365, 177)
-        path.cubicTo(397, 195, 425, 159, 457, 173)
-        path.cubicTo(489, 187, 486, 224, 518, 233)
-        path.cubicTo(548, 241, 567, 206, 598, 198)
-        path.cubicTo(635, 188, 663, 213, 658, 246)
-        path.cubicTo(654, 276, 620, 294, 621, 323)
-        path.cubicTo(622, 356, 663, 363, 676, 392)
-        path.cubicTo(689, 420, 653, 437, 623, 427)
-        path.cubicTo(592, 417, 573, 386, 545, 391)
-        path.cubicTo(518, 396, 505, 430, 474, 429)
-        path.cubicTo(440, 428, 426, 390, 394, 390)
-        path.cubicTo(359, 390, 343, 424, 310, 419)
-        path.cubicTo(277, 414, 265, 379, 235, 377)
-        path.cubicTo(205, 375, 188, 403, 160, 393)
-        path.cubicTo(147, 388, 140, 375, 135, 361)
-        return path
+    def _route_point(self, rect: QRectF) -> tuple[QPointF, float]:
+        points = self.ROUTE
+        pos = self.progress * (len(points) - 1)
+        i = min(int(pos), len(points) - 2)
+        t = pos - i
+        x1, y1 = points[i]
+        x2, y2 = points[i + 1]
+        x = x1 + (x2 - x1) * t
+        y = y1 + (y2 - y1) * t
+        px = rect.left() + (x / 204.0) * rect.width()
+        py = rect.top() + (y / 192.0) * rect.height()
+        angle = -__import__("math").degrees(__import__("math").atan2(y2 - y1, x2 - x1))
+        return QPointF(px, py), angle
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.fillRect(self.rect(), QColor("#06080b"))
+        painter.fillRect(self.rect(), QColor("#07090c"))
 
-        painter.setBrush(QBrush(QColor(60, 10, 18, 150)))
         painter.setPen(Qt.NoPen)
-        painter.drawEllipse(QRectF(500, 35, 390, 390))
+        painter.setBrush(QColor("#11151b"))
+        painter.drawRoundedRect(QRectF(24, 22, 872, 496), 22, 22)
+        painter.setBrush(QColor("#181116"))
+        painter.drawEllipse(QRectF(560, -70, 430, 430))
 
         painter.setPen(QColor("#ffffff"))
-        brand_font = QFont("Segoe UI", 30, QFont.Black)
-        brand_font.setLetterSpacing(QFont.AbsoluteSpacing, 2.5)
+        brand_font = QFont("Segoe UI", 31, QFont.Black)
+        brand_font.setLetterSpacing(QFont.AbsoluteSpacing, 2.6)
         painter.setFont(brand_font)
-        painter.drawText(QRectF(54, 35, 350, 55), Qt.AlignLeft | Qt.AlignVCenter, "SORG")
+        painter.drawText(QRectF(58, 48, 350, 50), Qt.AlignLeft | Qt.AlignVCenter, "SORG")
 
         painter.setPen(QColor("#e21b2d"))
-        gt_font = QFont("Segoe UI", 15, QFont.Black)
-        gt_font.setLetterSpacing(QFont.AbsoluteSpacing, 4.0)
+        gt_font = QFont("Segoe UI", 14, QFont.Black)
+        gt_font.setLetterSpacing(QFont.AbsoluteSpacing, 3.6)
         painter.setFont(gt_font)
-        painter.drawText(QRectF(54, 82, 350, 36), Qt.AlignLeft | Qt.AlignVCenter, "GT DATA ANALYZER")
+        painter.drawText(QRectF(58, 94, 350, 34), Qt.AlignLeft | Qt.AlignVCenter, "GT DATA ANALYZER")
 
-        painter.setPen(QColor("#8e98a5"))
-        sub_font = QFont("Segoe UI", 10, QFont.Bold)
-        sub_font.setLetterSpacing(QFont.AbsoluteSpacing, 2.0)
-        painter.setFont(sub_font)
-        painter.drawText(QRectF(54, 120, 420, 28), Qt.AlignLeft | Qt.AlignVCenter, "NÜRBURGRING NORDSCHLEIFE · RENNBETRIEB")
+        painter.setPen(QColor("#8b95a1"))
+        meta_font = QFont("Segoe UI", 9, QFont.Bold)
+        meta_font.setLetterSpacing(QFont.AbsoluteSpacing, 1.6)
+        painter.setFont(meta_font)
+        painter.drawText(QRectF(58, 135, 360, 24), Qt.AlignLeft | Qt.AlignVCenter, "NÜRBURGRING · NORDSCHLEIFE")
 
-        track = self._track_path()
+        track_panel = QRectF(470, 70, 365, 350)
+        painter.setPen(QPen(QColor("#2b3038"), 1))
+        painter.setBrush(QColor("#090c10"))
+        painter.drawRoundedRect(track_panel, 18, 18)
 
-        # Die komplette Nordschleife immer vollständig und zentriert anzeigen.
-        bounds = track.boundingRect()
-        target = QRectF(300, 145, 535, 255)
-        scale = min(target.width() / bounds.width(), target.height() / bounds.height()) * 0.92
+        image_rect = QRectF(495, 90, 315, 296)
+        if not self.track_pixmap.isNull():
+            scaled = self.track_pixmap.scaled(
+                QSize(int(image_rect.width()), int(image_rect.height())),
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation,
+            )
+            draw_rect = QRectF(
+                image_rect.center().x() - scaled.width() / 2,
+                image_rect.center().y() - scaled.height() / 2,
+                scaled.width(),
+                scaled.height(),
+            )
+            painter.drawPixmap(draw_rect.toRect(), scaled)
+        else:
+            draw_rect = image_rect
 
-        painter.save()
-        painter.translate(
-            target.center().x() - bounds.center().x() * scale,
-            target.center().y() - bounds.center().y() * scale,
-        )
-        painter.scale(scale, scale)
-
-        painter.setPen(QPen(QColor(0, 0, 0, 180), 18 / scale, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-        painter.drawPath(track)
-        painter.setPen(QPen(QColor("#e6e9ed"), 4 / scale, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-        painter.drawPath(track)
-
-        start = track.pointAtPercent(0.0)
-        painter.setPen(QPen(QColor("#e21b2d"), 8 / scale, Qt.SolidLine, Qt.RoundCap))
-        painter.drawLine(QPointF(start.x() - 8, start.y() - 7), QPointF(start.x() + 8, start.y() + 7))
-
-        car = track.pointAtPercent(self.progress)
-        angle = -track.angleAtPercent(self.progress)
+        car, angle = self._route_point(draw_rect)
         painter.save()
         painter.translate(car)
         painter.rotate(angle)
         painter.setPen(Qt.NoPen)
         painter.setBrush(QColor("#e21b2d"))
-        painter.drawRoundedRect(QRectF(-17, -8, 34, 16), 5, 5)
-        painter.setBrush(QColor("#f3f5f7"))
-        painter.drawRoundedRect(QRectF(-7, -11, 14, 7), 3, 3)
-        painter.setBrush(QColor("#050607"))
-        painter.drawRoundedRect(QRectF(-15, -10, 6, 4), 1.5, 1.5)
-        painter.drawRoundedRect(QRectF(9, -10, 6, 4), 1.5, 1.5)
-        painter.drawRoundedRect(QRectF(-15, 6, 6, 4), 1.5, 1.5)
-        painter.drawRoundedRect(QRectF(9, 6, 6, 4), 1.5, 1.5)
-        painter.restore()
+        painter.drawRoundedRect(QRectF(-11, -5, 22, 10), 3, 3)
+        painter.setBrush(QColor("#f6f7f8"))
+        painter.drawRoundedRect(QRectF(-4, -7, 8, 4), 2, 2)
         painter.restore()
 
         painter.setPen(QColor("#ffffff"))
-        title_font = QFont("Segoe UI", 22, QFont.Black)
+        title_font = QFont("Segoe UI", 24, QFont.Black)
         painter.setFont(title_font)
-        painter.drawText(QRectF(54, 430, 530, 42), Qt.AlignLeft | Qt.AlignVCenter, "Willkommen im Rennwochenende")
+        painter.drawText(QRectF(58, 205, 355, 70), Qt.AlignLeft | Qt.AlignVCenter, "Race engineering.\nKlar. Schnell. Live.")
 
-        painter.setPen(QColor("#838d99"))
-        status_font = QFont("Segoe UI", 10, QFont.DemiBold)
-        painter.setFont(status_font)
-        painter.drawText(QRectF(55, 473, 500, 24), Qt.AlignLeft | Qt.AlignVCenter, "Fahrzeug- und Teamdaten werden vorbereitet …")
+        painter.setPen(QColor("#9aa3ad"))
+        copy_font = QFont("Segoe UI", 10, QFont.Medium)
+        painter.setFont(copy_font)
+        painter.drawText(
+            QRectF(58, 287, 350, 70),
+            Qt.AlignLeft | Qt.AlignTop | Qt.TextWordWrap,
+            "Fahrzeug-, Reifen- und Sessiondaten werden geladen. "
+            "Die Oberfläche ist für den Einsatz an der Box und unterwegs optimiert.",
+        )
+
+        painter.setPen(QColor("#68717c"))
+        small_font = QFont("Segoe UI", 9, QFont.DemiBold)
+        painter.setFont(small_font)
+        painter.drawText(QRectF(58, 443, 360, 24), Qt.AlignLeft | Qt.AlignVCenter, "SYSTEMSTART · DATENBANK · TEAM-SYNC")
 
         painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor("#222830"))
-        painter.drawRoundedRect(QRectF(615, 462, 225, 5), 2.5, 2.5)
+        painter.setBrush(QColor("#242a31"))
+        painter.drawRoundedRect(QRectF(58, 482, 777, 5), 2.5, 2.5)
         painter.setBrush(QColor("#e21b2d"))
-        width = 225 * ((self.progress * 2.4) % 1.0)
-        painter.drawRoundedRect(QRectF(615, 462, width, 5), 2.5, 2.5)
-
+        width = 777 * ((self.progress * 1.75) % 1.0)
+        painter.drawRoundedRect(QRectF(58, 482, width, 5), 2.5, 2.5)
 
 def show_nuerburgring_splash(duration_ms: int = 2300):
     splash = NuerburgringSplash()
@@ -5323,6 +5327,50 @@ def apply_style(application: QApplication) -> None:
         }
         """
     )
+
+
+    application.setStyleSheet(application.styleSheet() + """
+        QMainWindow, QWidget { background: #080a0d; color: #f7f8fa; }
+        #sidebar { background: #0b0e12; border-right: 1px solid #262b32; }
+        #brandImage { background: #0b0e12; border-bottom: 1px solid #262b32; padding: 8px; }
+        #sidebarSection { color: #77818d; font-size: 9px; font-weight: 900; padding: 18px 12px 6px 12px; letter-spacing: 1px; }
+        QPushButton {
+            background: transparent; border: 1px solid transparent; border-radius: 10px;
+            padding: 10px 13px; color: #d9dde2; text-align: left; font-weight: 650;
+        }
+        QPushButton:hover { background: #15191f; border-color: #2c333c; }
+        QPushButton:checked { background: #1a1115; border-color: #7e202a; color: #ffffff; }
+        #pageTitle { color: #ffffff; font-size: 25px; font-weight: 900; padding: 10px 6px; }
+        #dashboardCard, #analysisCard, #comparisonSessionCard, #reportSelectionPanel,
+        #reportPreviewPanel, #detailsPanel, #panel, #simpleHeroCard {
+            background: #11151a; border: 1px solid #2a3038; border-radius: 14px;
+        }
+        #dashboardCard:hover { background: #151a20; border-color: #7e202a; }
+        #dashboardValue { color: #ffffff; font-size: 32px; font-weight: 900; }
+        #dashboardLabel { color: #9aa3ad; font-size: 11px; }
+        QTreeWidget, QTableWidget {
+            background: #0e1115; alternate-background-color: #12161b;
+            border: 1px solid #2a3038; border-radius: 12px; gridline-color: #20262d; padding: 5px;
+        }
+        QHeaderView::section {
+            background: #14191f; color: #cfd5dc; border: none; border-right: 1px solid #252c34;
+            padding: 9px; font-weight: 800;
+        }
+        QTreeWidget::item:selected, QTableWidget::item:selected { background: #7f1d27; color: #ffffff; }
+        QLineEdit, QTextEdit, QComboBox, QDateEdit, QSpinBox, QDoubleSpinBox {
+            background: #0d1014; color: #f5f7f9; border: 1px solid #333a44;
+            border-radius: 8px; padding: 7px 9px; selection-background-color: #9f2230;
+        }
+        QLineEdit:focus, QTextEdit:focus, QComboBox:focus, QDateEdit:focus,
+        QSpinBox:focus, QDoubleSpinBox:focus { border-color: #a52a35; }
+        QTabWidget::pane { background: #0e1115; border: 1px solid #292f37; border-radius: 11px; }
+        QTabBar::tab { background: #10141a; border: 1px solid #292f37; padding: 9px 17px; margin-right: 3px; border-radius: 7px; }
+        QTabBar::tab:selected { background: #7f1d27; border-color: #a72b38; }
+        #heroTextPanel { background: rgba(7, 9, 12, 225); border: 1px solid rgba(255,255,255,28); border-left: 4px solid #e21b2d; border-radius: 12px; }
+        #primaryActionButton, #primaryRed { background: #b51f2e; border: 1px solid #e21b2d; color: #ffffff; }
+        QStatusBar { background: #090c10; color: #7f8994; border-top: 1px solid #20262c; }
+        QToolTip { background: #151a20; color: #f4f6f8; border: 1px solid #333a44; padding: 5px; }
+    """)
 
 
 def main() -> int:
