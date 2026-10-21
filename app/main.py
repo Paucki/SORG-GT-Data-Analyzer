@@ -4120,7 +4120,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(
             f"SORG Motorsport · GT Data Analyzer {APP_VERSION}{user_suffix}"
         )
-        self.resize(1640, 960)
+        self.resize(1680, 980)
         self.setMinimumSize(1280, 760)
 
         database_path = writable_database_path()
@@ -4137,7 +4137,7 @@ class MainWindow(QMainWindow):
 
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
-        sidebar.setFixedWidth(210)
+        sidebar.setFixedWidth(236)
         sidebar_layout = QVBoxLayout(sidebar)
 
         brand = QLabel()
@@ -4228,6 +4228,7 @@ class MainWindow(QMainWindow):
         self.navigation_buttons = []
         for index, (title, page) in enumerate(pages):
             button = QPushButton(title)
+            button.setObjectName("mainNavButton")
             button.setCheckable(True)
             button.setAutoExclusive(True)
             button.clicked.connect(lambda checked=False, i=index: self.navigate_to(i))
@@ -4261,11 +4262,13 @@ class MainWindow(QMainWindow):
         tools_label.setObjectName("sidebarSection")
         sidebar_layout.addWidget(tools_label)
 
-        maps_button = QPushButton("📍 Strecke öffnen")
+        maps_button = QPushButton("📍  Strecke öffnen")
+        maps_button.setObjectName("serviceButton")
         maps_button.clicked.connect(self.open_selected_track_maps)
         sidebar_layout.addWidget(maps_button)
 
-        update_button = QPushButton("🔄 Nach Updates suchen")
+        update_button = QPushButton("🔄  Nach Updates suchen")
+        update_button.setObjectName("serviceButton")
         update_button.setToolTip("Prüft GitHub auf eine neue Version des SORG GT Data Analyzers.")
         update_button.clicked.connect(
             lambda: self.update_client.check_and_prompt(
@@ -4277,11 +4280,13 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(update_button)
 
         if self.user_session is not None and self.user_session.role == "admin":
-            users_button = QPushButton("👤 Benutzerverwaltung")
+            users_button = QPushButton("👤  Benutzerverwaltung")
+            users_button.setObjectName("serviceButton")
             users_button.clicked.connect(self.open_user_admin)
             sidebar_layout.addWidget(users_button)
 
-            update_status_button = QPushButton("● Live Update-Status")
+            update_status_button = QPushButton("●  Live Update-Status")
+            update_status_button.setObjectName("serviceButton")
             update_status_button.setToolTip(
                 "Admin-Liveansicht für Build, Release und Installer-Verfügbarkeit."
             )
@@ -4292,7 +4297,8 @@ class MainWindow(QMainWindow):
             )
             sidebar_layout.addWidget(update_status_button)
 
-        logout_button = QPushButton("↪ Abmelden")
+        logout_button = QPushButton("↪  Abmelden")
+        logout_button.setObjectName("logoutButton")
         logout_button.clicked.connect(self.logout_user)
         sidebar_layout.addWidget(logout_button)
 
@@ -5398,6 +5404,37 @@ def apply_style(application: QApplication) -> None:
         #primaryActionButton, #primaryRed { background: #b51f2e; border: 1px solid #e21b2d; color: #ffffff; }
         QStatusBar { background: #090c10; color: #7f8994; border-top: 1px solid #20262c; }
         QToolTip { background: #151a20; color: #f4f6f8; border: 1px solid #333a44; padding: 5px; }
+    """)
+
+    application.setStyleSheet(application.styleSheet() + """
+        /* V1.7.9 DESKTOP REDESIGN */
+        QMainWindow, QWidget { background: #07090c; color: #f4f6f8; }
+        #sidebar { background: #0a0d11; border-right: 1px solid #242a31; }
+        #brandImage { background: #0a0d11; border: none; border-bottom: 1px solid #242a31; padding: 10px 8px; }
+        #sidebarSection { color: #69737e; font-size: 9px; font-weight: 900; padding: 19px 14px 7px 14px; }
+        QPushButton#mainNavButton { min-height: 43px; margin: 2px 8px; padding: 9px 13px; background: transparent; border: 1px solid transparent; border-radius: 11px; color: #aeb6bf; font-size: 12px; font-weight: 800; text-align: left; }
+        QPushButton#mainNavButton:hover { background: #12171d; border-color: #29313a; color: #ffffff; }
+        QPushButton#mainNavButton:checked { background: #1d1115; border: 1px solid #6e1c26; border-left: 4px solid #e21b2d; color: #ffffff; padding-left: 10px; }
+        QPushButton#serviceButton { min-height: 38px; margin: 2px 8px; padding: 8px 12px; background: #0f1318; border: 1px solid #242b33; border-radius: 10px; color: #c2c8cf; font-size: 10px; font-weight: 750; text-align: left; }
+        QPushButton#serviceButton:hover { border-color: #6e1c26; background: #15191f; color: #ffffff; }
+        QPushButton#logoutButton { min-height: 38px; margin: 8px; padding: 8px 12px; background: #221014; border: 1px solid #4c1820; border-radius: 10px; color: #efb4ba; font-size: 10px; font-weight: 800; text-align: left; }
+        #pageTitle { color: #ffffff; font-size: 28px; font-weight: 950; padding: 13px 10px 10px 10px; }
+        #heroPanel { background: #0f1318; border: 1px solid #29313a; border-radius: 18px; padding: 26px; }
+        #heroTextPanel { background: rgba(7, 9, 12, 232); border: 1px solid rgba(255,255,255,28); border-left: 5px solid #e21b2d; border-radius: 13px; }
+        #dashboardCard { background: #10151a; border: 1px solid #29313a; border-radius: 16px; min-width: 175px; min-height: 148px; padding: 14px; }
+        #dashboardCard:hover { background: #141a20; border-color: #7b202b; }
+        #dashboardValue { color: #ffffff; font-size: 35px; font-weight: 950; }
+        #dashboardLabel { color: #8f99a4; font-size: 11px; font-weight: 700; }
+        QTabWidget::pane { background: #0c1014; border: 1px solid #29313a; border-radius: 12px; top: -1px; }
+        QTabBar::tab { min-width: 120px; background: #10151a; border: 1px solid #29313a; border-bottom: none; padding: 10px 16px; margin-right: 4px; border-radius: 9px 9px 0 0; color: #929ca7; font-weight: 800; }
+        QTabBar::tab:selected { background: #1b1115; border-color: #6f1c26; color: #ffffff; }
+        QTreeWidget, QTableWidget { background: #0c1014; alternate-background-color: #10151a; border: 1px solid #29313a; border-radius: 12px; gridline-color: #20262d; padding: 6px; }
+        QHeaderView::section { background: #14191f; color: #aeb7c0; border: none; border-right: 1px solid #242b33; border-bottom: 1px solid #242b33; padding: 10px 9px; font-size: 10px; font-weight: 900; }
+        QTreeWidget::item, QTableWidget::item { min-height: 34px; padding: 6px 8px; }
+        QTreeWidget::item:selected, QTableWidget::item:selected { background: #7e1e2a; color: white; }
+        QLineEdit, QTextEdit, QComboBox, QDateEdit, QSpinBox, QDoubleSpinBox { background: #0a0e12; color: #f4f6f8; border: 1px solid #323a44; border-radius: 9px; padding: 8px 10px; }
+        QLineEdit:focus, QTextEdit:focus, QComboBox:focus, QDateEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus { border: 1px solid #8b2330; }
+        QStatusBar { background: #080b0f; color: #6f7984; border-top: 1px solid #20262d; }
     """)
 
 
