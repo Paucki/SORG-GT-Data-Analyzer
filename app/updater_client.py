@@ -507,7 +507,7 @@ class UserAdminDialog(QDialog):
         layout.addWidget(hint)
 
         self.table = QTableWidget(0, 7)
-                self.table.setHorizontalHeaderLabels(["Name", "Benutzername", "Funktion", "Telefon", "Wohnort", "Status", "Letzte Anmeldung"])
+        self.table.setHorizontalHeaderLabels(["Name", "Benutzername", "Funktion", "Telefon", "Wohnort", "Status", "Letzte Anmeldung"])
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
