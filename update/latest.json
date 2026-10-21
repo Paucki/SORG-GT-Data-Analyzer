@@ -1,6 +1,6 @@
 {
-  "version": "1.6.8",
-  "url": "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.6.8/SORG_GT_Data_Analyzer_Setup.exe",
-  "sha256": "63b83471985ba7e27e72e69ac329cca3c5dbf2c37a5b56e7f705b42a45ea0afc",
-  "notes": "Login ohne E-Mail mit Benutzername | Teamrollen Reifen, Mechaniker, Car Chief und Fahrer | Wohnort und Telefonnummer in Benutzerprofilen"
+  "version": "1.6.9",
+  "url": "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.6.9/SORG_GT_Data_Analyzer_Setup.exe",
+  "sha256": "5caf1db11d64f2175c0209424dff1f7f9d8299a870d0e925dca7797fc810a8bf",
+  "notes": "Update-Prüfung ohne veralteten Cache | Benutzername statt E-Mail | Teamrollen und Personendaten"
 }
