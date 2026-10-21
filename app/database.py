@@ -310,6 +310,49 @@ class Database:
                 """
             )
 
+            # Lösch-Synchronisation: Jede lokale Löschung wird vorgemerkt,
+            # damit CloudSync sie auf allen Geräten entfernen kann.
+            self.connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS sync_deletions (
+                    local_table TEXT NOT NULL,
+                    local_id INTEGER NOT NULL,
+                    deleted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY(local_table, local_id)
+                )
+                """
+            )
+
+            sync_tables = (
+                "cars",
+                "drivers",
+                "tracks",
+                "events",
+                "sessions",
+                "tyre_sets",
+                "tyre_measurements",
+                "session_changes",
+                "session_setup_entries",
+                "session_media",
+                "driver_track_pressure_targets",
+                "pressure_recommendation_log",
+                "tyre_notes",
+            )
+            for table in sync_tables:
+                trigger = "trg_sync_delete_" + table
+                self.connection.execute(
+                    f"""
+                    CREATE TRIGGER IF NOT EXISTS {trigger}
+                    AFTER DELETE ON {table}
+                    BEGIN
+                        INSERT OR REPLACE INTO sync_deletions(
+                            local_table, local_id, deleted_at
+                        )
+                        VALUES ('{table}', OLD.id, CURRENT_TIMESTAMP);
+                    END
+                    """
+                )
+
     def _ensure_column(
         self,
         table: str,
