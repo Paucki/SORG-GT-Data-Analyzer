@@ -106,25 +106,28 @@ def resource_path(filename: str) -> Path:
     return base / filename
 
 
-def writable_database_path() -> Path:
+def writable_database_path(user_session: UserSession | None = None) -> Path:
     """
-    Die installierte EXE kann unter Program Files liegen.
-    Daher wird die Datenbank in LocalAppData gespeichert.
-    Beim ersten Start wird die mitgelieferte Datenbank kopiert.
+    Admins verwenden die vollständige Teamdatenbank.
+    Normale Benutzer erhalten eine eigene lokale Offline-Datenbank, damit
+    auf dem PC nur die ihnen zugewiesenen Fahrzeugdaten sichtbar sind.
     """
-    APP_DATA_FOLDER.mkdir(
-        parents=True,
-        exist_ok=True,
+    APP_DATA_FOLDER.mkdir(parents=True, exist_ok=True)
+
+    restricted = (
+        user_session is not None
+        and user_session.role != "admin"
+        and bool(user_session.user_id)
     )
+    if restricted:
+        safe_user = "".join(ch for ch in user_session.user_id if ch.isalnum() or ch in "-_")
+        return APP_DATA_FOLDER / f"sorg_gt_user_{safe_user}.db"
 
     target = APP_DATA_FOLDER / "sorg_gt_v2.db"
-
     if not target.exists():
         bundled = resource_path("sorg_gt_v2.db")
-
         if bundled.exists():
             shutil.copy2(bundled, target)
-
     return target
 
 
@@ -4123,7 +4126,7 @@ class MainWindow(QMainWindow):
         self.resize(1680, 980)
         self.setMinimumSize(1280, 760)
 
-        database_path = writable_database_path()
+        database_path = writable_database_path(self.user_session)
         self.database = Database(database_path)
         self.cloud_sync = CloudSync(self.database, self.user_session) if self.user_session is not None else None
         self._cloud_sync_scheduled = False
