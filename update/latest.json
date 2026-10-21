@@ -1,6 +1,6 @@
 {
-  "version": "1.7.0",
-  "url": "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.7.0/SORG_GT_Data_Analyzer_Setup.exe",
-  "sha256": "ace45143b43433568730d04140ad9d91dff74ca4df941481d8a619b15837af47",
-  "notes": "Vorname und Nachname getrennt | Angemeldet bleiben | Abmelden | neue Spa-Startansicht auf Mobile"
+  "version": "1.7.1",
+  "url": "https://github.com/Paucki/SORG-GT-Data-Analyzer/releases/download/V1.7.1/SORG_GT_Data_Analyzer_Setup.exe",
+  "sha256": "a43868bdc092494b2bb4edba68af05f43248548f5cac0f46ccd098850f641ca4",
+  "notes": "Neuer animierter Nürburgring-Startbildschirm am PC | gespeicherte Anmeldung | Abmelden | Personendaten erweitert"
 }
