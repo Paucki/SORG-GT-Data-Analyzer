@@ -380,6 +380,13 @@ class CloudSync:
         sessions = self._rows("sessions")
         tyre_sets = self._rows("tyre_sets")
         measurements = self._rows("tyre_measurements")
+        session_changes = self._rows("session_changes")
+        setup_entries = self._rows("session_setup_entries")
+        session_media = self._rows("session_media")
+        pressure_targets = self._rows("driver_track_pressure_targets")
+        pressure_log = self._rows("pressure_recommendation_log")
+        session_drivers = self._rows("session_drivers")
+        tyre_notes = self._rows("tyre_notes")
 
         remote_ids = {
             "vehicles": self._remote_legacy_ids("vehicles"),
@@ -388,6 +395,12 @@ class CloudSync:
             "race_weekends": self._remote_legacy_ids("race_weekends"),
             "sessions": self._remote_legacy_ids("sessions"),
             "tyre_sets": self._remote_legacy_ids("tyre_sets"),
+            "session_changes": self._remote_legacy_ids("session_changes"),
+            "session_setup_entries": self._remote_legacy_ids("session_setup_entries"),
+            "session_media": self._remote_legacy_ids("session_media"),
+            "pressure_setups": self._remote_legacy_ids("pressure_setups"),
+            "tyre_notes": self._remote_legacy_ids("tyre_notes"),
+            "pressure_recommendation_log": self._remote_legacy_ids("pressure_recommendation_log"),
         }
         car_map = {int(r["id"]): remote_ids["vehicles"].get(int(r["id"]), self._uuid("vehicles", r["id"])) for r in cars}
         driver_map = {int(r["id"]): remote_ids["drivers"].get(int(r["id"]), self._uuid("drivers", r["id"])) for r in drivers}
@@ -395,6 +408,12 @@ class CloudSync:
         event_map = {int(r["id"]): remote_ids["race_weekends"].get(int(r["id"]), self._uuid("race_weekends", r["id"])) for r in events}
         session_map = {int(r["id"]): remote_ids["sessions"].get(int(r["id"]), self._uuid("sessions", r["id"])) for r in sessions}
         set_map = {int(r["id"]): remote_ids["tyre_sets"].get(int(r["id"]), self._uuid("tyre_sets", r["id"])) for r in tyre_sets}
+        change_map = {int(r["id"]): remote_ids["session_changes"].get(int(r["id"]), self._uuid("session_changes", r["id"])) for r in session_changes}
+        setup_map = {int(r["id"]): remote_ids["session_setup_entries"].get(int(r["id"]), self._uuid("session_setup_entries", r["id"])) for r in setup_entries}
+        media_map = {int(r["id"]): remote_ids["session_media"].get(int(r["id"]), self._uuid("session_media", r["id"])) for r in session_media}
+        pressure_setup_map = {int(r["id"]): remote_ids["pressure_setups"].get(int(r["id"]), self._uuid("pressure_setups", r["id"])) for r in pressure_targets}
+        tyre_note_map = {int(r["id"]): remote_ids["tyre_notes"].get(int(r["id"]), self._uuid("tyre_notes", r["id"])) for r in tyre_notes}
+        pressure_log_map = {int(r["id"]): remote_ids["pressure_recommendation_log"].get(int(r["id"]), self._uuid("pressure_recommendation_log", r["id"])) for r in pressure_log}
 
         event_track = {int(r["id"]): int(r["track_id"]) for r in events}
         session_by_id = {int(r["id"]): r for r in sessions}
@@ -408,6 +427,13 @@ class CloudSync:
             "tyre_sets": [],
             "sessions": [],
             "tyre_measurements": [],
+            "session_changes": [],
+            "session_setup_entries": [],
+            "session_media": [],
+            "pressure_setups": [],
+            "session_drivers": [],
+            "tyre_notes": [],
+            "pressure_recommendation_log": [],
         }
 
         for r in cars:
@@ -550,14 +576,125 @@ class CloudSync:
                 "created_at": self._get(r,"created_at"), "updated_at": self._get(r,"updated_at"),
             })
 
+
+        for r in session_changes:
+            sid = session_map.get(int(r["session_id"]))
+            if not sid:
+                continue
+            rid = int(r["id"])
+            payloads["session_changes"].append({
+                "id": change_map[rid], "legacy_id": rid, "team_id": self.team_id,
+                "session_id": sid, "category": self._get(r,"category"),
+                "title": self._get(r,"title"), "description": self._get(r,"description"),
+                "created_at": self._get(r,"created_at"), "updated_at": self._get(r,"updated_at"),
+            })
+
+        for r in setup_entries:
+            sid = session_map.get(int(r["session_id"]))
+            if not sid:
+                continue
+            rid = int(r["id"])
+            payloads["session_setup_entries"].append({
+                "id": setup_map[rid], "legacy_id": rid, "team_id": self.team_id,
+                "session_id": sid, "category": self._get(r,"category") or "Setup",
+                "parameter_name": self._get(r,"parameter_name") or "Parameter",
+                "old_value": self._get(r,"old_value"), "new_value": self._get(r,"new_value"),
+                "unit": self._get(r,"unit"), "notes": self._get(r,"notes"),
+                "created_at": self._get(r,"created_at"), "updated_at": self._get(r,"updated_at"),
+            })
+
+        for r in session_media:
+            sid = session_map.get(int(r["session_id"]))
+            if not sid:
+                continue
+            rid = int(r["id"])
+            payloads["session_media"].append({
+                "id": media_map[rid], "legacy_id": rid, "team_id": self.team_id,
+                "session_id": sid, "title": self._get(r,"title") or "Datei",
+                "file_path": self._get(r,"file_path") or "",
+                "media_type": self._get(r,"media_type"), "notes": self._get(r,"notes"),
+                "created_at": self._get(r,"created_at"),
+            })
+
+        for r in pressure_targets:
+            rid = int(r["id"])
+            driver_id = driver_map.get(int(r["driver_id"]))
+            track_id = track_map.get(int(r["track_id"]))
+            car_id = car_map.get(int(r["car_id"]))
+            if not driver_id or not track_id or not car_id:
+                continue
+            front = self._safe_float(self._get(r,"target_hot_front_bar",0))
+            rear = self._safe_float(self._get(r,"target_hot_rear_bar",0))
+            payloads["pressure_setups"].append({
+                "id": pressure_setup_map[rid], "legacy_id": rid, "team_id": self.team_id,
+                "vehicle_id": car_id, "track_id": track_id, "driver_id": driver_id,
+                "name": "Persönlicher Ziel-Heißdruck",
+                "notes": self._get(r,"notes"),
+                "reference_cold_vl": 0, "reference_cold_vr": 0,
+                "reference_cold_hl": 0, "reference_cold_hr": 0,
+                "target_hot_vl": front, "target_hot_vr": front,
+                "target_hot_hl": rear, "target_hot_hr": rear,
+                "target_hot_front_bar": front, "target_hot_rear_bar": rear,
+                "created_at": self._get(r,"created_at"), "updated_at": self._get(r,"updated_at"),
+            })
+
+        for r in session_drivers:
+            sid = session_map.get(int(r["session_id"]))
+            did = driver_map.get(int(r["driver_id"]))
+            if sid and did:
+                payloads["session_drivers"].append({
+                    "team_id": self.team_id, "session_id": sid, "driver_id": did,
+                })
+
+        for r in tyre_notes:
+            set_id = set_map.get(int(r["tyre_set_id"]))
+            if not set_id:
+                continue
+            rid = int(r["id"])
+            payloads["tyre_notes"].append({
+                "id": tyre_note_map[rid], "legacy_id": rid, "team_id": self.team_id,
+                "tyre_set_id": set_id, "note_time": self._get(r,"note_time"),
+                "action": self._get(r,"action"), "tyre_type": self._get(r,"tyre_type"),
+                "manufacturer": self._get(r,"manufacturer"),
+                "condition_before": self._get(r,"condition_before"),
+                "condition_after": self._get(r,"condition_after"),
+                "notes": self._get(r,"notes"),
+            })
+
+        for r in pressure_log:
+            set_id = set_map.get(int(r["tyre_set_id"]))
+            if not set_id:
+                continue
+            rid = int(r["id"])
+            payloads["pressure_recommendation_log"].append({
+                "id": pressure_log_map[rid], "legacy_id": rid, "team_id": self.team_id,
+                "tyre_set_id": set_id, "position": self._get(r,"position"),
+                "target_hot_pressure_bar": self._get(r,"target_hot_pressure_bar"),
+                "cold_tyre_temp_c": self._get(r,"cold_tyre_temp_c"),
+                "expected_hot_tyre_temp_c": self._get(r,"expected_hot_tyre_temp_c"),
+                "ambient_pressure_bar": self._get(r,"ambient_pressure_bar"),
+                "history_correction_bar": self._get(r,"history_correction_bar"),
+                "recommended_cold_pressure_bar": self._get(r,"recommended_cold_pressure_bar"),
+                "model_version": self._get(r,"model_version"),
+                "created_at": self._get(r,"created_at"),
+            })
+
         # Eltern zuerst, danach abhängige Datensätze.
         # Stammdaten und Sessions werden vollständig upsertet. So werden
         # neue lokale Datensätze und Änderungen (z. B. Satznummer/Session)
         # garantiert in die Cloud geschrieben und nicht durch einen
         # fehlerhaften Zeitstempel übersprungen.
         errors = []
-        always_push = {"vehicles", "drivers", "tracks", "race_weekends", "tyre_sets", "sessions"}
-        for table in ("vehicles","drivers","tracks","race_weekends","tyre_sets","sessions","tyre_measurements"):
+        always_push = {
+            "vehicles", "drivers", "tracks", "race_weekends", "tyre_sets", "sessions",
+            "session_changes", "session_setup_entries", "session_media", "pressure_setups",
+            "session_drivers", "tyre_notes", "pressure_recommendation_log"
+        }
+        for table in (
+            "vehicles","drivers","tracks","race_weekends","tyre_sets","sessions",
+            "session_changes","session_setup_entries","session_media","pressure_setups",
+            "session_drivers","tyre_notes","pressure_recommendation_log","tyre_measurements"
+        ):
             try:
                 if table in always_push:
                     send = payloads[table]
@@ -570,7 +707,17 @@ class CloudSync:
                         remote_time = _stamp((old or {}).get("updated_at") or (old or {}).get("created_at"))
                         if old is None or local_time >= remote_time:
                             send.append(rec)
-                self._upsert(table, send)
+                if table == "session_drivers":
+                    if send:
+                        self._request(
+                            table,
+                            method="POST",
+                            query="on_conflict=team_id,session_id,driver_id",
+                            body=send,
+                            prefer="resolution=merge-duplicates,return=minimal",
+                        )
+                else:
+                    self._upsert(table, send)
             except RuntimeError as error:
                 errors.append(f"{table}: {error}")
         if errors:
