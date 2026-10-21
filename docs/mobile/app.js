@@ -158,6 +158,23 @@ $('#loginBtn').onclick=async()=>{
     $('#loginBtn').disabled=false;
   }
 };
+$('#forgotBtn').onclick=async()=>{
+  const username=$('#loginUsername').value.trim();
+  if(!username){$('#loginStatus').textContent='Bitte zuerst deinen Benutzernamen eingeben.';return}
+  $('#loginStatus').textContent='Wiederherstellung wird geprüft …';
+  try{
+    const response=await fetch(SUPABASE_URL+'/functions/v1/auth-recover',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
+      body:JSON.stringify({username,redirect_to:location.origin+location.pathname})
+    });
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'Passwort-Reset nicht möglich');
+    $('#loginStatus').textContent='Falls möglich, wurde eine Reset-Nachricht versendet. Sonst kann ein Admin dein Passwort direkt ändern.';
+  }catch(error){
+    $('#loginStatus').textContent='Passwort-Reset nicht möglich: '+error.message;
+  }
+};
 $('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginBtn').click()});
 $('#savePasswordBtn').onclick=async()=>{
   const p1=$('#newPassword').value, p2=$('#newPassword2').value;
