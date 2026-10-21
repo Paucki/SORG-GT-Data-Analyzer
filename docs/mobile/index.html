@@ -10,7 +10,7 @@
 <title>SORG GT Mobile</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css?v=179">
+<link rel="stylesheet" href="styles.css?v=180">
 </head>
 <body>
 <div id="splashScreen" class="splash-screen">
@@ -126,6 +126,58 @@
   </div>
 </section>
 
+<section class="view" data-view="setup">
+  <div class="section-head"><button class="backbtn" data-go="more">‹</button><div><div class="eyebrow">ADMIN · DATENBANK</div><h2>Rennbetrieb einrichten</h2></div></div>
+  <div class="setup-stack">
+    <div class="setup-card">
+      <div class="section-title">1 · Strecke</div>
+      <div class="two"><input id="setupTrackName" placeholder="Streckenname"><input id="setupTrackCountry" placeholder="Land"></div>
+      <div class="two"><input id="setupTrackLength" type="number" step="0.001" placeholder="Länge km"><input id="setupTrackCorners" type="number" step="1" placeholder="Kurven"></div>
+      <button id="createTrackBtn" class="ghost full" type="button">STRECKE ANLEGEN</button>
+    </div>
+
+    <div class="setup-card">
+      <div class="section-title">2 · Fahrzeug</div>
+      <div class="two"><input id="setupCarManufacturer" placeholder="Hersteller"><input id="setupCarModel" placeholder="Modell"></div>
+      <div class="two"><input id="setupCarNumber" placeholder="Startnummer"><input id="setupCarClass" placeholder="Klasse"></div>
+      <button id="createCarBtn" class="ghost full" type="button">FAHRZEUG ANLEGEN</button>
+    </div>
+
+    <div class="setup-card">
+      <div class="section-title">3 · Fahrer</div>
+      <div class="two"><input id="setupDriverFirst" placeholder="Vorname"><input id="setupDriverLast" placeholder="Nachname"></div>
+      <div class="two"><input id="setupDriverNumber" placeholder="Startnummer"><input id="setupDriverLicence" placeholder="Lizenzklasse"></div>
+      <button id="createDriverBtn" class="ghost full" type="button">FAHRER ANLEGEN</button>
+    </div>
+
+    <div class="setup-card">
+      <div class="section-title">4 · Rennwochenende</div>
+      <input id="setupEventName" placeholder="Name des Rennwochenendes">
+      <select id="setupEventTrack"></select>
+      <div class="two"><label>Von<input id="setupEventStart" type="date"></label><label>Bis<input id="setupEventEnd" type="date"></label></div>
+      <div class="two"><input id="setupEventChampionship" placeholder="Meisterschaft"><input id="setupEventType" placeholder="Event-Typ"></div>
+      <button id="createEventBtn" class="primary full" type="button">RENNWOCHENENDE ANLEGEN</button>
+    </div>
+
+    <div class="setup-card">
+      <div class="section-title">5 · Session</div>
+      <select id="setupSessionEvent"></select>
+      <select id="setupSessionCar"></select>
+      <select id="setupSessionDriver"></select>
+      <div class="two"><input id="setupSessionType" placeholder="z. B. Qualifying"><input id="setupSessionDate" type="datetime-local"></div>
+      <button id="createSessionBtn" class="primary full" type="button">SESSION ANLEGEN</button>
+    </div>
+
+    <div class="setup-card">
+      <div class="section-title">6 · Reifensatz</div>
+      <select id="setupTyreSession"></select>
+      <div class="two"><input id="setupTyreNumber" type="number" step="1" placeholder="Satznummer"><input id="setupTyreCompound" placeholder="Compound"></div>
+      <button id="createTyreSetBtn" class="primary full" type="button">REIFENSATZ ANLEGEN</button>
+    </div>
+    <div id="setupStatus" class="login-status"></div>
+  </div>
+</section>
+
 <section class="view" data-view="more">
   <div class="section-head"><div><div class="eyebrow">MEHR</div><h2>Team & System</h2></div></div>
   <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Cloud</div><p id="cloudInfo" class="muted">Verbindung wird geprüft …</p><button id="reloadBtn" class="ghost full">Jetzt synchronisieren</button></div></div>
@@ -152,6 +204,11 @@
   </div>
   <div id="adminLiveMenu" class="settings-menu hidden">
     <div class="settings-caption">ADMIN</div>
+    <button class="settings-row settings-button" type="button" data-go="setup">
+      <span class="settings-icon">⚙</span>
+      <span class="settings-copy"><b>Rennbetrieb einrichten</b><small>Strecken, Fahrzeuge, Fahrer, Events, Sessions und Reifensätze</small></span>
+      <span class="settings-arrow">›</span>
+    </button>
     <button class="settings-row settings-button" type="button" data-go="livetrack">
       <span class="settings-icon">⌖</span>
       <span class="settings-copy"><b>Live-Track</b><small>Nordschleife und Fahrzeugposition anzeigen</small></span>
@@ -174,6 +231,6 @@
 </nav>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=179"></script>
+<script src="app.js?v=180"></script>
 </body>
 </html>
