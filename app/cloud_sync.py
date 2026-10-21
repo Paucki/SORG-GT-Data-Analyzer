@@ -97,10 +97,212 @@ class CloudSync:
             return
         self._busy = True
         try:
+            self._pull_core()
             self._pull_measurements()
             self._push_core()
         finally:
             self._busy = False
+
+    def _patch_legacy_id(self, table: str, remote_id: str, legacy_id: int) -> None:
+        query = urllib.parse.urlencode({"id": f"eq.{remote_id}"})
+        self._request(
+            table,
+            method="PATCH",
+            query=query,
+            body={"legacy_id": int(legacy_id)},
+            prefer="return=minimal",
+        )
+
+    def _pull_core(self):
+        """Zieht Mobile-/Cloud-Stammdaten in die lokale PC-Datenbank."""
+        def remote(table):
+            return self._request(
+                table,
+                query=urllib.parse.urlencode({
+                    "team_id": f"eq.{self.team_id}",
+                    "select": "*",
+                }),
+            ) or []
+
+        tracks = remote("tracks")
+        vehicles = remote("vehicles")
+        drivers = remote("drivers")
+        weekends = remote("race_weekends")
+        sessions = remote("sessions")
+        tyre_sets = remote("tyre_sets")
+
+        track_map = {}
+        for row in tracks:
+            legacy = row.get("legacy_id")
+            local = self.db.get_track(int(legacy)) if legacy is not None else None
+            remote_time = _stamp(row.get("updated_at") or row.get("created_at"))
+            local_time = _stamp((local["updated_at"] or local["created_at"]) if local else None)
+            if local is None or remote_time > local_time:
+                local_id = self.db.save_track(
+                    int(legacy) if local is not None else None,
+                    row.get("name") or "",
+                    row.get("country") or "",
+                    float(row.get("length_km") or 0),
+                    int(row.get("corners") or 0),
+                    row.get("address") or "",
+                    row.get("latitude"),
+                    row.get("longitude"),
+                    row.get("notes") or "",
+                )
+            else:
+                local_id = int(local["id"])
+            track_map[str(row["id"])] = local_id
+            if row.get("legacy_id") is None:
+                self._patch_legacy_id("tracks", str(row["id"]), local_id)
+
+        car_map = {}
+        for row in vehicles:
+            legacy = row.get("legacy_id")
+            local = self.db.get_car(int(legacy)) if legacy is not None else None
+            remote_time = _stamp(row.get("updated_at") or row.get("created_at"))
+            local_time = _stamp((local["updated_at"] or local["created_at"]) if local else None)
+            if local is None or remote_time > local_time:
+                local_id = self.db.save_car(
+                    int(legacy) if local is not None else None,
+                    row.get("manufacturer") or "",
+                    row.get("model") or row.get("name") or "",
+                    row.get("vehicle_class") or "",
+                    int(row.get("year") or 0),
+                    float(row.get("weight_kg") or 0),
+                    float(row.get("horsepower") or 0),
+                    row.get("drive_type") or "",
+                    row.get("notes") or "",
+                    str(row.get("start_number") or ""),
+                )
+            else:
+                local_id = int(local["id"])
+            car_map[str(row["id"])] = local_id
+            if row.get("legacy_id") is None:
+                self._patch_legacy_id("vehicles", str(row["id"]), local_id)
+
+        driver_map = {}
+        for row in drivers:
+            legacy = row.get("legacy_id")
+            local = self.db.get_driver(int(legacy)) if legacy is not None else None
+            remote_time = _stamp(row.get("updated_at") or row.get("created_at"))
+            local_time = _stamp((local["updated_at"] or local["created_at"]) if local else None)
+            if local is None or remote_time > local_time:
+                first = row.get("first_name") or ""
+                last = row.get("last_name") or ""
+                if not first and not last:
+                    parts = str(row.get("name") or "").split(" ", 1)
+                    first = parts[0] if parts else ""
+                    last = parts[1] if len(parts) > 1 else ""
+                local_id = self.db.save_driver(
+                    int(legacy) if local is not None else None,
+                    first,
+                    last,
+                    row.get("nickname") or "",
+                    str(row.get("race_number") or row.get("number") or ""),
+                    row.get("licence_class") or "",
+                    row.get("notes") or "",
+                )
+            else:
+                local_id = int(local["id"])
+            driver_map[str(row["id"])] = local_id
+            if row.get("legacy_id") is None:
+                self._patch_legacy_id("drivers", str(row["id"]), local_id)
+
+        event_map = {}
+        for row in weekends:
+            remote_track = str(row.get("track_id") or "")
+            track_id = track_map.get(remote_track)
+            if track_id is None:
+                continue
+            legacy = row.get("legacy_id")
+            local = self.db.get_event(int(legacy)) if legacy is not None else None
+            remote_time = _stamp(row.get("updated_at") or row.get("created_at"))
+            local_time = _stamp((local["updated_at"] or local["created_at"]) if local else None)
+            if local is None or remote_time > local_time:
+                local_id = self.db.save_event(
+                    int(legacy) if local is not None else None,
+                    row.get("name") or "",
+                    track_id,
+                    row.get("start_date") or "",
+                    row.get("end_date") or "",
+                    row.get("championship") or "",
+                    row.get("event_type") or "",
+                    row.get("notes") or "",
+                )
+            else:
+                local_id = int(local["id"])
+            event_map[str(row["id"])] = local_id
+            if row.get("legacy_id") is None:
+                self._patch_legacy_id("race_weekends", str(row["id"]), local_id)
+
+        session_map = {}
+        remote_session_by_id = {}
+        for row in sessions:
+            remote_session_by_id[str(row["id"])] = row
+            event_id = event_map.get(str(row.get("race_weekend_id") or ""))
+            car_id = car_map.get(str(row.get("vehicle_id") or ""))
+            driver_id = driver_map.get(str(row.get("driver_id") or "")) if row.get("driver_id") else None
+            if event_id is None or car_id is None:
+                continue
+            legacy = row.get("legacy_id")
+            local = self.db.get_session(int(legacy)) if legacy is not None else None
+            remote_time = _stamp(row.get("updated_at") or row.get("created_at"))
+            local_time = _stamp((local["updated_at"] or local["created_at"]) if local else None)
+            if local is None or remote_time > local_time:
+                local_id = self.db.save_session(
+                    int(legacy) if local is not None else None,
+                    event_id,
+                    car_id,
+                    driver_id,
+                    row.get("session_type") or "Session",
+                    row.get("session_date") or row.get("measured_at") or "",
+                    row.get("weather") or "",
+                    float(row.get("air_temperature") or 0),
+                    float(row.get("track_temperature") or 0),
+                    float(row.get("rim_temp_c") or 0),
+                    float(row.get("humidity_percent") or 0),
+                    row.get("notes") or "",
+                )
+            else:
+                local_id = int(local["id"])
+            session_map[str(row["id"])] = local_id
+            if row.get("legacy_id") is None:
+                self._patch_legacy_id("sessions", str(row["id"]), local_id)
+
+        # Cloud-Reifensätze werden einer Session über sessions.tyre_set_id zugeordnet.
+        set_session = {}
+        for row in sessions:
+            remote_set = row.get("tyre_set_id")
+            if remote_set:
+                local_session_id = session_map.get(str(row["id"]))
+                if local_session_id is not None:
+                    set_session[str(remote_set)] = local_session_id
+
+        for row in tyre_sets:
+            session_id = set_session.get(str(row["id"]))
+            if session_id is None:
+                continue
+            legacy = row.get("legacy_id")
+            local = self.db.get_tyre_set(int(legacy)) if legacy is not None else None
+            remote_time = _stamp(row.get("updated_at") or row.get("created_at"))
+            local_time = _stamp((local["updated_at"] or local["created_at"]) if local else None)
+            if local is None or remote_time > local_time:
+                local_id = self.db.save_tyre_set(
+                    int(legacy) if local is not None else None,
+                    session_id,
+                    str(row.get("set_number") or ""),
+                    row.get("manufacturer") or "",
+                    row.get("compound") or "",
+                    int(row.get("laps") or 0),
+                    int(row.get("heat_cycles") or 0),
+                    row.get("notes") or "",
+                    row.get("tyre_type") or "Slick",
+                    row.get("condition") or "gebraucht",
+                )
+            else:
+                local_id = int(local["id"])
+            if row.get("legacy_id") is None:
+                self._patch_legacy_id("tyre_sets", str(row["id"]), local_id)
 
     def _push_core(self):
         cars = self._rows("cars")
