@@ -51,3 +51,5 @@ input,select,textarea{background:#0a0d11;border-color:#303842;color:#f7f8fa}.inp
 @keyframes tracklap{to{offset-distance:100%}}
 .splash-line{height:4px;background:#20262e}.splash-line:after{background:linear-gradient(90deg,transparent,#ee2b3d,transparent)}
 @media(max-width:390px){.welcome h1{font-size:32px}.home-track-card img{width:96px}.splash-track{height:300px}.track-car{display:none}}
+
+.admin-status-link{display:block;text-decoration:none;text-align:center;margin-top:10px;min-height:44px;line-height:22px}
