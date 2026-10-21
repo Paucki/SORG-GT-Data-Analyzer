@@ -79,12 +79,34 @@ async function loadCloud(){
   ]);
   const err=[tr,v,d,e,s,t,m,ch,se,ps,tn,sm,pl].find(x=>x.error)?.error;
   if(err){$('#cloudInfo').textContent='Cloud-Fehler: '+err.message;return}
-  cloud={
-    tracks:tr.data||[],vehicles:v.data||[],drivers:d.data||[],events:e.data||[],
-    sessions:s.data||[],sets:t.data||[],measurements:m.data||[],
-    changes:ch.data||[],setupEntries:se.data||[],pressureSetups:ps.data||[],
-    tyreNotes:tn.data||[],sessionMedia:sm.data||[],pressureLog:pl.data||[]
-  };
+  let tracks=tr.data||[],vehicles=v.data||[],drivers=d.data||[],events=e.data||[];
+  let sessions=s.data||[],sets=t.data||[],measurements=m.data||[];
+  let changes=ch.data||[],setupEntries=se.data||[],pressureSetups=ps.data||[];
+  let tyreNotes=tn.data||[],sessionMedia=sm.data||[],pressureLog=pl.data||[];
+
+  if(currentRole!=='admin'){
+    const vehicleIds=new Set(vehicles.map(x=>x.id));
+    sessions=sessions.filter(x=>vehicleIds.has(x.vehicle_id));
+    sets=sets.filter(x=>!x.vehicle_id||vehicleIds.has(x.vehicle_id));
+    const eventIds=new Set(sessions.map(x=>x.race_weekend_id).filter(Boolean));
+    const driverIds=new Set(sessions.map(x=>x.driver_id).filter(Boolean));
+    const trackIds=new Set(sessions.map(x=>x.track_id).filter(Boolean));
+    events=events.filter(x=>eventIds.has(x.id));
+    events.forEach(x=>{if(x.track_id)trackIds.add(x.track_id)});
+    drivers=drivers.filter(x=>driverIds.has(x.id));
+    tracks=tracks.filter(x=>trackIds.has(x.id));
+    const sessionIds=new Set(sessions.map(x=>x.id));
+    const setIds=new Set(sets.map(x=>x.id));
+    measurements=measurements.filter(x=>sessionIds.has(x.session_id)&&setIds.has(x.tyre_set_id));
+    changes=changes.filter(x=>sessionIds.has(x.session_id));
+    setupEntries=setupEntries.filter(x=>sessionIds.has(x.session_id));
+    sessionMedia=sessionMedia.filter(x=>sessionIds.has(x.session_id));
+    pressureSetups=pressureSetups.filter(x=>vehicleIds.has(x.vehicle_id));
+    tyreNotes=tyreNotes.filter(x=>setIds.has(x.tyre_set_id));
+    pressureLog=pressureLog.filter(x=>setIds.has(x.tyre_set_id));
+  }
+
+  cloud={tracks,vehicles,drivers,events,sessions,sets,measurements,changes,setupEntries,pressureSetups,tyreNotes,sessionMedia,pressureLog};
   render();
   if($('.view[data-view="setup"]')?.classList.contains('active'))populateSetup();
   if($('.view[data-view="teamdata"]')?.classList.contains('active'))renderTeamData();
@@ -293,13 +315,33 @@ async function adminCall(payload){const {data,error}=await supa.functions.invoke
 async function loadAdminUsers(){
   $('#adminStatus').textContent='Benutzer werden geladen …';
   try{
-    const data=await adminCall({action:'list'}),users=data.users||[];
+    const data=await adminCall({action:'list'}),users=data.users||[],vehicles=data.vehicles||[];
     $('#adminUserList').innerHTML=users.map(u=>{
       const full=[u.first_name,u.last_name].filter(Boolean).join(' ')||u.display_name||u.username;
-      return '<div class="user-admin-row" data-id="'+u.id+'"><div class="user-admin-head"><div><b>'+esc(full)+'</b><span>@'+esc(u.username)+' · '+esc(u.team_role||'Mechaniker')+'</span><span>'+esc(u.phone||'Keine Telefonnummer')+' · '+esc(u.residence||'Kein Wohnort')+'</span></div><span class="user-state '+(u.inactive?'off':'')+'">'+(u.inactive?'INAKTIV':'AKTIV')+'</span></div><div class="user-admin-actions"><select class="teamRoleSelect"><option '+(u.team_role==='Reifen'?'selected':'')+'>Reifen</option><option '+(u.team_role==='Mechaniker'?'selected':'')+'>Mechaniker</option><option '+(u.team_role==='Car Chief'?'selected':'')+'>Car Chief</option><option '+(u.team_role==='Fahrer'?'selected':'')+'>Fahrer</option></select><select class="permissionSelect"><option value="user" '+(u.permission==='user'?'selected':'')+'>Benutzer</option><option value="admin" '+(u.permission==='admin'?'selected':'')+'>Admin</option></select><button class="ghost compact profileBtn">Daten bearbeiten</button><button class="ghost compact permBtn">Berechtigung speichern</button><button class="ghost compact pwBtn">Passwort setzen</button><button class="ghost compact activeBtn">'+(u.inactive?'Aktivieren':'Deaktivieren')+'</button></div></div>';
+      const assigned=(u.vehicle_ids||[]).map(id=>vehicles.find(v=>v.id===id)).filter(Boolean);
+      const vehicleText=u.permission==='admin'?'Alle Fahrzeuge':(assigned.length?assigned.map(v=>(v.name||vehicleName(v.id))+(v.start_number?' #'+v.start_number:'')).join(', '):'Kein Fahrzeug zugewiesen');
+      return '<div class="user-admin-row" data-id="'+u.id+'"><div class="user-admin-head"><div><b>'+esc(full)+'</b><span>@'+esc(u.username)+' · '+esc(u.team_role||'Mechaniker')+'</span><span>'+esc(vehicleText)+'</span><span>'+esc(u.phone||'Keine Telefonnummer')+' · '+esc(u.residence||'Kein Wohnort')+'</span></div><span class="user-state '+(u.inactive?'off':'')+'">'+(u.inactive?'INAKTIV':'AKTIV')+'</span></div><div class="user-admin-actions"><select class="teamRoleSelect"><option '+(u.team_role==='Reifen'?'selected':'')+'>Reifen</option><option '+(u.team_role==='Mechaniker'?'selected':'')+'>Mechaniker</option><option '+(u.team_role==='Car Chief'?'selected':'')+'>Car Chief</option><option '+(u.team_role==='Fahrer'?'selected':'')+'>Fahrer</option></select><select class="permissionSelect"><option value="user" '+(u.permission==='user'?'selected':'')+'>Benutzer</option><option value="admin" '+(u.permission==='admin'?'selected':'')+'>Admin</option></select><button class="ghost compact vehicleBtn">Fahrzeuge zuweisen</button><button class="ghost compact profileBtn">Daten bearbeiten</button><button class="ghost compact permBtn">Berechtigung speichern</button><button class="ghost compact pwBtn">Passwort setzen</button><button class="ghost compact activeBtn">'+(u.inactive?'Aktivieren':'Deaktivieren')+'</button><div class="vehicleAssign hidden"></div></div></div>';
     }).join('')||'<div class="empty">Noch keine Benutzer.</div>';
     $$('.user-admin-row').forEach(row=>{
       const id=row.dataset.id,user=users.find(u=>u.id===id);
+      row.querySelector('.vehicleBtn').onclick=()=>{
+        const panel=row.querySelector('.vehicleAssign');
+        if(user.permission==='admin'){
+          panel.classList.remove('hidden');
+          panel.innerHTML='<div class="muted">Admins sehen automatisch alle Fahrzeuge.</div>';
+          return;
+        }
+        const assigned=new Set(user.vehicle_ids||[]);
+        panel.classList.remove('hidden');
+        panel.innerHTML='<div class="vehicle-checks">'+vehicles.map(v=>{
+          const label=(v.name||[v.manufacturer,v.model].filter(Boolean).join(' ')||'Fahrzeug')+(v.start_number?' · #'+v.start_number:'');
+          return '<label><input type="checkbox" value="'+esc(v.id)+'" '+(assigned.has(v.id)?'checked':'')+'> '+esc(label)+'</label>';
+        }).join('')+'</div><button class="primary compact saveVehiclesBtn">Fahrzeuge speichern</button>';
+        panel.querySelector('.saveVehiclesBtn').onclick=async()=>{
+          const vehicle_ids=[...panel.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);
+          try{await adminCall({action:'set_vehicles',user_id:id,vehicle_ids});$('#adminStatus').textContent='Fahrzeugzuweisung gespeichert.';await loadAdminUsers()}catch(e){$('#adminStatus').textContent=e.message}
+        };
+      };
       row.querySelector('.profileBtn').onclick=async()=>{
         const first_name=prompt('Vorname:',user.first_name||'');if(first_name===null)return;
         const last_name=prompt('Nachname:',user.last_name||'');if(last_name===null)return;
