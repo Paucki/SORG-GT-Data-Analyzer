@@ -56,6 +56,7 @@ from PySide6.QtWidgets import (
 from database import Database
 from report_generator import MotorsportReport
 from updater_client import LoginDialog, UpdateClient, UserSession
+from cloud_sync import CloudSync
 from version import APP_VERSION
 from dialogs import (
     CarDialog,
@@ -4118,6 +4119,8 @@ class MainWindow(QMainWindow):
 
         database_path = writable_database_path()
         self.database = Database(database_path)
+        self.cloud_sync = CloudSync(self.database, self.user_session) if self.user_session is not None else None
+        self._cloud_sync_scheduled = False
         self.expert_authenticated = False
         self.current_page_index = 0
 
@@ -4280,6 +4283,8 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"Datenbank: {database_path}")
 
         self.refresh_all()
+        if self.cloud_sync is not None and self.cloud_sync.enabled:
+            QTimer.singleShot(1200, self.sync_cloud)
         if self.update_client is not None and self.user_session is not None:
             QTimer.singleShot(
                 1500,
@@ -4386,6 +4391,23 @@ class MainWindow(QMainWindow):
             refresh = getattr(page, "refresh", None)
             if callable(refresh):
                 refresh()
+        self.schedule_cloud_sync()
+
+    def schedule_cloud_sync(self):
+        if self.cloud_sync is None or not self.cloud_sync.enabled or self._cloud_sync_scheduled:
+            return
+        self._cloud_sync_scheduled = True
+        QTimer.singleShot(700, self.sync_cloud)
+
+    def sync_cloud(self):
+        self._cloud_sync_scheduled = False
+        if self.cloud_sync is None or not self.cloud_sync.enabled:
+            return
+        try:
+            self.cloud_sync.sync()
+            self.statusBar().showMessage("Cloud synchronisiert", 2500)
+        except Exception as error:
+            self.statusBar().showMessage(f"Cloud-Sync nicht möglich: {error}", 6000)
 
     def add_car(self):
         if CarDialog(self.database, parent=self).exec():
