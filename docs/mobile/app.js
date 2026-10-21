@@ -5,6 +5,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let teamId='',currentUser=null,currentRole='user';
 let cloud={tracks:[],vehicles:[],drivers:[],events:[],sessions:[],sets:[],measurements:[],changes:[],setupEntries:[],pressureSetups:[],tyreNotes:[],sessionMedia:[],pressureLog:[]};
 let recoveryMode=false;
+let realtimeChannel=null,reloadTimer=null,autoSyncTimer=null;
 const startedAt=Date.now();
 
 function esc(v=''){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -111,6 +112,23 @@ async function loadCloud(){
   if($('.view[data-view="setup"]')?.classList.contains('active'))populateSetup();
   if($('.view[data-view="teamdata"]')?.classList.contains('active'))renderTeamData();
 }
+function scheduleAutoReload(){
+  clearTimeout(reloadTimer);
+  reloadTimer=setTimeout(()=>loadCloud(),350);
+}
+function startRealtime(){
+  if(realtimeChannel){supa.removeChannel(realtimeChannel);realtimeChannel=null}
+  if(!teamId)return;
+  const tables=['vehicles','drivers','tracks','race_weekends','sessions','tyre_sets','tyre_measurements','session_changes','session_setup_entries','session_media','pressure_setups','session_drivers','tyre_notes','pressure_recommendation_log','sync_tombstones','user_vehicle_assignments'];
+  realtimeChannel=supa.channel('sorg-team-'+teamId);
+  tables.forEach(table=>{
+    realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table,filter:'team_id=eq.'+teamId},scheduleAutoReload);
+  });
+  realtimeChannel.subscribe();
+  clearInterval(autoSyncTimer);
+  autoSyncTimer=setInterval(()=>loadCloud(),10000);
+}
+
 async function initAccount(session,reveal=true){
   currentUser=session?.user||null;
   if(!currentUser){
@@ -129,6 +147,7 @@ async function initAccount(session,reveal=true){
   $('#adminLiveMenu').classList.toggle('hidden',currentRole!=='admin');
   if(reveal){$('#loginScreen').classList.add('hidden');$('#recoveryScreen').classList.add('hidden');$('#app').classList.remove('hidden');}
   await loadCloud();
+  startRealtime();
 }
 async function finishSplash(){
   const remain=Math.max(0,2200-(Date.now()-startedAt));await delay(remain);
@@ -171,28 +190,35 @@ $('#savePasswordBtn').onclick=async()=>{
 };
 async function logout(){
   localStorage.setItem('sorg_remember_login','0');
+  if(realtimeChannel){supa.removeChannel(realtimeChannel);realtimeChannel=null}
+  clearInterval(autoSyncTimer);clearTimeout(reloadTimer);
   await supa.auth.signOut();teamId='';currentRole='user';currentUser=null;
   $('#app').classList.add('hidden');$('#loginScreen').classList.remove('hidden');$('#loginPassword').value='';
 }
 $('#logoutBtn').onclick=logout;$('#logoutFullBtn').onclick=logout;$('#reloadBtn').onclick=loadCloud;
 
-function renderSharedList(selector,rows,label){
+function renderSharedList(selector,rows,label,table=null){
   const el=$(selector);if(!el)return;
-  el.innerHTML=rows.length?rows.map(x=>'<div class="shared-row">'+esc(label(x))+'</div>').join(''):'<div class="muted">Keine Daten vorhanden.</div>';
+  el.innerHTML=rows.length?rows.map(x=>{
+    const del=table?'<button class="ghost compact sharedDelete" data-table="'+esc(table)+'" data-id="'+esc(x.id)+'">Löschen</button>':'';
+    return '<div class="shared-row"><span>'+esc(label(x))+'</span>'+del+'</div>';
+  }).join(''):'<div class="muted">Keine Daten vorhanden.</div>';
+  el.querySelectorAll('.sharedDelete').forEach(btn=>btn.onclick=()=>deleteShared(btn.dataset.table,btn.dataset.id,'Eintrag'));
 }
 function renderTeamData(){
-  renderSharedList('#teamDrivers',cloud.drivers,x=>driverName(x.id));
-  renderSharedList('#teamVehicles',cloud.vehicles,x=>vehicleName(x.id)+(x.start_number?' · #'+x.start_number:''));
-  renderSharedList('#teamTracks',cloud.tracks,x=>x.name+(x.country?' · '+x.country:''));
-  renderSharedList('#teamSessions',cloud.sessions,x=>eventName(x.race_weekend_id)+' · '+sessionName(x));
-  renderSharedList('#teamChanges',cloud.changes,x=>(x.category||'Änderung')+' · '+(x.title||x.description||''));
-  renderSharedList('#teamSetupEntries',cloud.setupEntries,x=>(x.category||'Setup')+' · '+(x.parameter_name||'')+' → '+(x.new_value??''));
+  const admin=currentRole==='admin';
+  renderSharedList('#teamDrivers',cloud.drivers,x=>driverName(x.id),admin?'drivers':null);
+  renderSharedList('#teamVehicles',cloud.vehicles,x=>vehicleName(x.id)+(x.start_number?' · #'+x.start_number:''),admin?'vehicles':null);
+  renderSharedList('#teamTracks',cloud.tracks,x=>x.name+(x.country?' · '+x.country:''),admin?'tracks':null);
+  renderSharedList('#teamSessions',cloud.sessions,x=>eventName(x.race_weekend_id)+' · '+sessionName(x),'sessions');
+  renderSharedList('#teamChanges',cloud.changes,x=>(x.category||'Änderung')+' · '+(x.title||x.description||''),'session_changes');
+  renderSharedList('#teamSetupEntries',cloud.setupEntries,x=>(x.category||'Setup')+' · '+(x.parameter_name||'')+' → '+(x.new_value??''),'session_setup_entries');
   renderSharedList('#teamPressureSetups',cloud.pressureSetups,x=>{
     const front=x.target_hot_front_bar??x.target_hot_vl??x.target_hot_vr;
     const rear=x.target_hot_rear_bar??x.target_hot_hl??x.target_hot_hr;
     return (x.name||'Zieldruck')+' · VA '+(front??'–')+' bar · HA '+(rear??'–')+' bar';
-  });
-  renderSharedList('#teamTyreNotes',cloud.tyreNotes,x=>(x.tyre_type||'Reifen')+' · '+(x.action||x.notes||'Notiz'));
+  },'pressure_setups');
+  renderSharedList('#teamTyreNotes',cloud.tyreNotes,x=>(x.tyre_type||'Reifen')+' · '+(x.action||x.notes||'Notiz'),'tyre_notes');
 }
 
 function populateMeasure(){
@@ -311,6 +337,13 @@ $('#createTyreSetBtn').onclick=async()=>{
   }catch(e){setupStatus('Reifensatz konnte nicht gespeichert werden: '+e.message)}
 };
 
+async function deleteShared(table,id,label='Eintrag'){
+  if(!id)return;
+  if(!confirm(label+' wirklich löschen? Die Löschung wird auf allen Geräten übernommen.'))return;
+  const result=await supa.from(table).delete().eq('id',id);
+  if(result.error){alert('Löschen fehlgeschlagen: '+result.error.message);return}
+  await loadCloud();
+}
 async function adminCall(payload){const {data,error}=await supa.functions.invoke('admin-users',{body:payload});if(error)throw new Error(error.message||'Admin-Funktion fehlgeschlagen');if(data?.error)throw new Error(data.error);return data||{}}
 async function loadAdminUsers(){
   $('#adminStatus').textContent='Benutzer werden geladen …';
