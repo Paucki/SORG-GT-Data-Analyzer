@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08090b">
+<title>SORG GT · Update Status</title>
+<style>
+:root{--bg:#07090c;--panel:#10141a;--panel2:#151a21;--text:#f7f8fa;--muted:#909aa6;--line:#2a3139;--red:#e21b2d;--green:#31c47b;--amber:#e5a93d}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+body{min-height:100vh;background:radial-gradient(circle at 85% 0,rgba(226,27,45,.15),transparent 30%),linear-gradient(180deg,#0a0d11,#07090c);padding:24px}
+.wrap{max-width:820px;margin:0 auto}.brand{font-weight:950;letter-spacing:.11em;font-size:26px}.brand span{color:var(--red)}.sub{color:var(--muted);font-size:11px;letter-spacing:.22em;margin:5px 0 24px}
+.hero,.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px}.hero{padding:22px;margin-bottom:14px}.hero-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.eyebrow{color:var(--red);font-size:10px;font-weight:900;letter-spacing:.18em}.hero h1{font-size:34px;line-height:1;margin:8px 0 10px}.hero p{margin:0;color:var(--muted);line-height:1.45}.pill{border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:11px;font-weight:900;white-space:nowrap}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{padding:18px}.label{color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.12em}.value{font-size:22px;font-weight:950;margin-top:7px}.detail{color:var(--muted);font-size:12px;margin-top:7px;line-height:1.45}.bar{height:7px;background:#222831;border-radius:999px;overflow:hidden;margin-top:16px}.bar>i{display:block;height:100%;width:35%;background:var(--red);border-radius:999px;animation:load 1.4s ease-in-out infinite alternate}.ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:#ff6b78}.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.links a,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border-radius:11px;border:1px solid var(--line);background:#14191f;color:#fff;text-decoration:none;font-weight:850;font-size:12px}.links a.primary{background:#b91f2d;border-color:#e21b2d}.footer{color:#69737f;font-size:11px;margin-top:14px;text-align:center}@keyframes load{to{transform:translateX(180%)}}@media(max-width:640px){body{padding:16px}.grid{grid-template-columns:1fr}.hero h1{font-size:29px}.hero-top{flex-direction:column}.pill{align-self:flex-start}}
+@media(prefers-reduced-motion:reduce){.bar>i{animation:none;width:65%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">SORG <span>GT</span></div>
+  <div class="sub">LIVE UPDATE STATUS</div>
+
+  <section class="hero">
+    <div class="hero-top">
+      <div>
+        <div class="eyebrow">AUTOMATISCH AKTUALISIERT</div>
+        <h1 id="headline">Status wird geladen …</h1>
+        <p id="summary">GitHub-Build und Release werden geprüft.</p>
+      </div>
+      <div id="overallPill" class="pill">PRÜFUNG</div>
+    </div>
+    <div id="progressBar" class="bar"><i></i></div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <div class="label">BUILD</div>
+      <div id="buildValue" class="value">–</div>
+      <div id="buildDetail" class="detail">Noch keine Daten.</div>
+    </section>
+    <section class="card">
+      <div class="label">RELEASE / INSTALLER</div>
+      <div id="releaseValue" class="value">–</div>
+      <div id="releaseDetail" class="detail">Noch keine Daten.</div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-top:12px">
+    <div class="label">AKTUELLE VERSION</div>
+    <div id="versionValue" class="value">–</div>
+    <div id="updatedValue" class="detail">Letzte Prüfung: –</div>
+    <div class="links">
+      <a id="releaseLink" class="primary" href="https://github.com/Paucki/SORG-GT-Data-Analyzer/releases" target="_blank" rel="noopener">GitHub Releases öffnen</a>
+      <a href="mobile/">Handy-App öffnen</a>
+      <button id="refreshBtn" class="btn" type="button">Jetzt aktualisieren</button>
+    </div>
+  </section>
+
+  <div class="footer">Die Seite prüft automatisch ungefähr einmal pro Minute.</div>
+</div>
+<script>
+const API='https://api.github.com/repos/Paucki/SORG-GT-Data-Analyzer/actions/runs?branch=main&per_page=20';
+const LATEST='https://raw.githubusercontent.com/Paucki/SORG-GT-Data-Analyzer/main/update/latest.json';
+const $=id=>document.getElementById(id);
+function setOverall(kind,head,summary){
+  $('headline').textContent=head;$('summary').textContent=summary;
+  const p=$('overallPill');p.className='pill '+(kind==='ok'?'ok':kind==='bad'?'bad':'warn');
+  p.textContent=kind==='ok'?'FERTIG':kind==='bad'?'FEHLER':'LÄUFT';
+  $('progressBar').style.display=kind==='ok'||kind==='bad'?'none':'block';
+}
+function fmtTime(v){if(!v)return '–';try{return new Date(v).toLocaleString('de-AT',{dateStyle:'short',timeStyle:'medium'})}catch{return v}}
+async function refresh(){
+  $('updatedValue').textContent='Letzte Prüfung: '+new Date().toLocaleTimeString('de-AT');
+  try{
+    const [runsRes,latestRes]=await Promise.all([
+      fetch(API,{headers:{'Accept':'application/vnd.github+json'}}),
+      fetch(LATEST+'?t='+Date.now(),{cache:'no-store'})
+    ]);
+    if(!runsRes.ok)throw new Error('GitHub Status nicht erreichbar');
+    const runs=await runsRes.json();
+    let latest=null;
+    try{if(latestRes.ok)latest=await latestRes.json()}catch{}
+    const builds=(runs.workflow_runs||[]).filter(r=>r.name==='Build and publish SORG GT Data Analyzer');
+    const run=builds[0];
+    if(!run){throw new Error('Kein Build gefunden')}
+
+    const verMatch=(run.display_title||'').match(/(?:v|V)?(\d+\.\d+\.\d+)/);
+    const buildVersion=verMatch?verMatch[1]:'unbekannt';
+    $('versionValue').textContent='V'+(latest?.version||buildVersion);
+
+    if(run.status!=='completed'){
+      $('buildValue').innerHTML='<span class="warn">Build läuft</span>';
+      $('buildDetail').textContent='GitHub Actions arbeitet gerade an V'+buildVersion+' · Start: '+fmtTime(run.run_started_at);
+      $('releaseValue').innerHTML='<span class="warn">Noch nicht hochgeladen</span>';
+      $('releaseDetail').textContent='Der Installer erscheint nach erfolgreichem Build.';
+      setOverall('warn','V'+buildVersion+' wird gebaut','Du musst nichts tun. Diese Ansicht aktualisiert sich automatisch.');
+    }else if(run.conclusion!=='success'){
+      $('buildValue').innerHTML='<span class="bad">Build fehlgeschlagen</span>';
+      $('buildDetail').textContent='V'+buildVersion+' · Abschluss: '+fmtTime(run.updated_at);
+      $('releaseValue').innerHTML='<span class="bad">Kein neuer Installer</span>';
+      $('releaseDetail').textContent='Der Fehler muss zuerst behoben und neu gebaut werden.';
+      setOverall('bad','V'+buildVersion+' hat einen Fehler','Der Installer wurde noch nicht veröffentlicht.');
+    }else{
+      $('buildValue').innerHTML='<span class="ok">Build erfolgreich</span>';
+      $('buildDetail').textContent='V'+buildVersion+' · Fertig: '+fmtTime(run.updated_at);
+      const released=latest?.version===buildVersion;
+      if(released){
+        $('releaseValue').innerHTML='<span class="ok">Installer verfügbar</span>';
+        $('releaseDetail').textContent='V'+latest.version+' ist hochgeladen und kann installiert werden.';
+        if(latest.url)$('releaseLink').href=latest.url;
+        setOverall('ok','V'+buildVersion+' ist bereit','Build erfolgreich und Installer auf GitHub veröffentlicht.');
+      }else{
+        $('releaseValue').innerHTML='<span class="warn">Veröffentlichung läuft</span>';
+        $('releaseDetail').textContent='Build ist fertig, Release-Metadaten werden noch aktualisiert.';
+        setOverall('warn','V'+buildVersion+' wird veröffentlicht','Der Build ist fertig. Der Installer wird gerade bereitgestellt.');
+      }
+    }
+  }catch(e){
+    $('buildValue').innerHTML='<span class="bad">Status nicht verfügbar</span>';
+    $('buildDetail').textContent=e.message;
+    $('releaseValue').textContent='–';$('releaseDetail').textContent='Bitte später erneut prüfen.';
+    setOverall('bad','Status konnte nicht geladen werden','Die App selbst ist davon nicht betroffen.');
+  }
+}
+$('refreshBtn').addEventListener('click',refresh);
+refresh();setInterval(refresh,60000);
+</script>
+</body>
+</html>
