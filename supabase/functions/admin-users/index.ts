@@ -58,16 +58,26 @@ Deno.serve(async (req: Request) => {
     const { data: listData, error: listError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
     if (listError) return json({ error: listError.message }, 400);
 
+    const { data: profiles, error: profilesError } = await admin
+      .from("profiles")
+      .select("id,username,display_name,phone,residence,team_role");
+    if (profilesError) return json({ error: profilesError.message }, 400);
+
     const memberMap = new Map((members || []).map((m: any) => [m.user_id, m]));
+    const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
     const users = (listData.users || [])
       .filter((u: any) => memberMap.has(u.id))
       .map((u: any) => {
         const m: any = memberMap.get(u.id);
+        const p: any = profileMap.get(u.id) || {};
         return {
           id: u.id,
-          email: u.email || "",
-          display_name: u.user_metadata?.display_name || (u.email || "").split("@")[0],
-          role: m?.role || "user",
+          username: p.username || "",
+          display_name: p.display_name || p.username || "Benutzer",
+          phone: p.phone || "",
+          residence: p.residence || "",
+          team_role: p.team_role || "Mechaniker",
+          permission: m?.role || "user",
           inactive: !!u.banned_until && new Date(u.banned_until).getTime() > Date.now(),
           banned_until: u.banned_until || null,
           created_at: u.created_at,
@@ -78,29 +88,52 @@ Deno.serve(async (req: Request) => {
   }
 
   if (action === "create") {
-    const email = String(body.email || "").trim().toLowerCase();
+    const username = String(body.username || "").trim();
     const password = String(body.password || "");
     const displayName = String(body.display_name || "").trim();
-    const role = body.role === "admin" ? "admin" : "user";
-    if (!email || password.length < 6) return json({ error: "E-Mail und Passwort mit mindestens 6 Zeichen erforderlich." }, 400);
+    const phone = String(body.phone || "").trim();
+    const residence = String(body.residence || "").trim();
+    const teamRole = ["Reifen","Mechaniker","Car Chief","Fahrer"].includes(String(body.team_role))
+      ? String(body.team_role) : "Mechaniker";
+    const permission = body.permission === "admin" ? "admin" : "user";
+
+    if (username.length < 3 || password.length < 6) {
+      return json({ error: "Benutzername muss mindestens 3 Zeichen und Passwort mindestens 6 Zeichen haben." }, 400);
+    }
+
+    const { data: existingProfile } = await admin
+      .from("profiles")
+      .select("id")
+      .ilike("username", username)
+      .maybeSingle();
+    if (existingProfile) return json({ error: "Benutzername ist bereits vergeben." }, 400);
+
+    const safe = username.toLowerCase().replace(/[^a-z0-9._-]/g, "-").replace(/-+/g, "-");
+    const authEmail = safe + "+" + crypto.randomUUID().slice(0,8) + "@sorg-gt.local";
 
     const { data, error } = await admin.auth.admin.createUser({
-      email,
+      email: authEmail,
       password,
       email_confirm: true,
-      user_metadata: { display_name: displayName || email.split("@")[0] },
+      user_metadata: { display_name: displayName || username },
     });
     if (error || !data.user) return json({ error: error?.message || "Benutzer konnte nicht angelegt werden." }, 400);
 
     const { error: memberInsert } = await admin
       .from("team_members")
-      .upsert({ team_id: teamId, user_id: data.user.id, role }, { onConflict: "team_id,user_id" });
+      .upsert({ team_id: teamId, user_id: data.user.id, role: permission }, { onConflict: "team_id,user_id" });
     if (memberInsert) return json({ error: memberInsert.message }, 400);
 
-    await admin.from("profiles").upsert({
+    const { error: profileError } = await admin.from("profiles").upsert({
       id: data.user.id,
-      display_name: displayName || email.split("@")[0],
+      username,
+      display_name: displayName || username,
+      phone,
+      residence,
+      team_role: teamRole,
+      updated_at: new Date().toISOString(),
     });
+    if (profileError) return json({ error: profileError.message }, 400);
 
     return json({ ok: true, user_id: data.user.id });
   }
@@ -115,6 +148,37 @@ Deno.serve(async (req: Request) => {
     .eq("user_id", targetId)
     .maybeSingle();
   if (!targetMembership) return json({ error: "Benutzer gehört nicht zu diesem Team." }, 404);
+
+  if (action === "update_profile") {
+    const username = String(body.username || "").trim();
+    const displayName = String(body.display_name || "").trim();
+    const phone = String(body.phone || "").trim();
+    const residence = String(body.residence || "").trim();
+    const teamRole = ["Reifen","Mechaniker","Car Chief","Fahrer"].includes(String(body.team_role))
+      ? String(body.team_role) : "Mechaniker";
+    if (username.length < 3) return json({ error: "Benutzername muss mindestens 3 Zeichen haben." }, 400);
+
+    const { data: duplicate } = await admin
+      .from("profiles")
+      .select("id")
+      .ilike("username", username)
+      .neq("id", targetId)
+      .maybeSingle();
+    if (duplicate) return json({ error: "Benutzername ist bereits vergeben." }, 400);
+
+    const { error } = await admin
+      .from("profiles")
+      .update({
+        username,
+        display_name: displayName || username,
+        phone,
+        residence,
+        team_role: teamRole,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", targetId);
+    return error ? json({ error: error.message }, 400) : json({ ok: true });
+  }
 
   if (action === "set_password") {
     const password = String(body.password || "");
