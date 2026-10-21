@@ -10,7 +10,7 @@
 <title>SORG GT Mobile</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=179">
 </head>
 <body>
 <div id="splashScreen" class="splash-screen">
@@ -117,6 +117,15 @@
   <div id="allList" class="list empty">Noch keine Messungen vorhanden.</div>
 </section>
 
+<section class="view" data-view="livetrack">
+  <div class="section-head"><button class="backbtn" data-go="more">‹</button><div><div class="eyebrow">ADMIN · LIVE</div><h2>Live-Track</h2></div></div>
+  <div class="live-track-panel">
+    <div class="live-track-head"><div><b>Nürburgring Nordschleife</b><span>Live-Position</span></div><span id="liveTrackState" class="live-state">WARTET AUF DATEN</span></div>
+    <img class="live-track-map" alt="Nürburgring Nordschleife" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMwAAADACAAAAABti9NVAAAFHklEQVR4Ad3BC3Ybh4JEMdz9L7qGkvM8ia1Ps0WRPALyg+QHyQ+S7zbkLvLNJpN7yLcaYbmHfKMhF8s95FvML3m13ENuby7y/yb3kFsb8h+Te8itTf4wuYecN/nL5E+Te8hZ8yJ/mPxpcg85acLIv438ZbmHnLS8GLmYiwz5y/IVyyE5Z/LLNP+Sv01Om1/ymZwz+ceQV3ORv0zOmjAX+VjOmfxj5LfJ3yYnTV6NfCinTN4x+dvknOV/Jh/JCSNXGjlj+W3kfbnakKuNnDD5bch7crXJKUMOGfll8m+Td+Rak7PmX/Km+UdeTP5r8rZcbfJl8yp/mBcxuZj8YfK2XG9yE0P+bfJq8mLyp+VtOWEucguT30ZeTS5G/rK8LedMbmLyj5EXI3ORNyxvy0mTmxh5MXk1v+RNk7flrOVG5pe8mFd5z+RtOWu5mSG/LJP3Le/IWcu3GPKB5R05a/kWQz4weVtOmjzIkDfkpOVxJm/IOZMHmvwtp0weafK3nDF5qMnfcsLksSZ/y/UmDzNheUOuNnmY+SVvyLUmDzN5X640eZzJ+3KVkceZfCDXmDzQ5CO5xuSBJh/JNSaPM/lQrrI8zuRDucbkcSYfyhUmDzT5UK6wPNLkQ7nC8kiTD+UKyyNNPpQrLI80+VCOmzzS5EM5bvJIy8dy3PJAIx/LYZNHmYt8IoctjzLyuRw1eZDJETlo8iCTQ3LM5FEmh+SQyaNMjskRk4dZDsrnRh5mclA+NfIwk6PymcnjjByVj408zshh+ciQx5lcIe8bckcjvw25Rt4z5J7mRV7MRa6T9yx3NWL+J1fLe5Z7mrwackreM3I/k6/K+0buZvJF+cjIvYx8ST40uZu5yHn52OSORk7LJyb3NDkrn5jc1eSkfGZyT5OT8pnJXS0n5VOTe1pOyqcmdzQ5KZ+b3M3krHxuci8jZ+WA5U4m5+WAyT2MfEGOWL7fyJfkiOXbTb4oR0y+18hX5YjJdxr5uhwx+T4jt5BDlm8zchM5ZPkmIzeSQ5bvMXIrOWT5DiO3k0OW2xu5pRyy3NzITeWIyY2N3FiOmNzWyK3liOWmRm4vB0xuafIdcsDkdka+RQ5YbmIy8k1ywHIT0+Tb5IDlNka+Tw5YbmEu8n1ywOTrRpPvkyMmXzTyzXLI5CtGvl0OmXzByPfLMZOzRu4hB03OGbmLHDU5Y3InOWxyvcm95LjJtSZ3kyuMXGVyP7nK5ArTcje5zuSwyT3lSpOjlrvKtSbHTO4q15p8YC2vJveVq82LvG1NXix3listhrxtLS8md5YrzUUmf5nMRUzuLdeaFpM/DK21TO4uZ03+Y5oXMbm/nDX5j8mLxeT+ctr8IxcjhoY8QM6bXMwvGZqLPEJuYGj+kUfJrYyMPExuZGTkcfJ18yojD5QvmVd5MfJI+YqR30YeKV8w+W1e5IFy3uS3IcsD5bTJb3PR5IFy1uT/jYY8UE6aMHIxcrE8UM6ZzKsYuZg8UE6ZmLCMPIGcspgwjTyDnDIxskaeQs4ZMa/yHHLWZC7yLHLatDyTnLYszyRnTZNnkrOmyTPJWcvyVHLSNHkqOWmaPJWctCzPJScty3PJOdPIU8k5kyFPJOdMGHkeOWm5mDyPnLQYeSI5ZzLyTHLKNPJccsY08mRywlzk6eR6c5Hnk6tNkyeUq02TJ5SrDXlG+UHyg+QHyQ+SHyQ/SH6Q/CD5QfKD5AfJD5IfJD9IfpD8IPlB8oPkB8kPkh8kP0h+kP8Ds5ew0KaKRtYAAAAASUVORK5CYII=">
+    <div class="live-track-note">Sobald eine Live-Positionsquelle verbunden ist, wird die Fahrzeugposition hier angezeigt.</div>
+  </div>
+</section>
+
 <section class="view" data-view="more">
   <div class="section-head"><div><div class="eyebrow">MEHR</div><h2>Team & System</h2></div></div>
   <div class="admin-card open-card"><div class="admin-body"><div class="section-title">Cloud</div><p id="cloudInfo" class="muted">Verbindung wird geprüft …</p><button id="reloadBtn" class="ghost full">Jetzt synchronisieren</button></div></div>
@@ -141,8 +150,13 @@
       </div>
     </div>
   </div>
-  <div id="adminUpdateMenu" class="settings-menu hidden">
+  <div id="adminLiveMenu" class="settings-menu hidden">
     <div class="settings-caption">ADMIN</div>
+    <button class="settings-row settings-button" type="button" data-go="livetrack">
+      <span class="settings-icon">⌖</span>
+      <span class="settings-copy"><b>Live-Track</b><small>Nordschleife und Fahrzeugposition anzeigen</small></span>
+      <span class="settings-arrow">›</span>
+    </button>
     <a class="settings-row" href="../update-status.html">
       <span class="settings-icon">●</span>
       <span class="settings-copy"><b>Live Update-Status</b><small>Build, Upload, Release und Installer prüfen</small></span>
@@ -160,6 +174,6 @@
 </nav>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js"></script>
+<script src="app.js?v=179"></script>
 </body>
 </html>
