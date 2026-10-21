@@ -55,7 +55,7 @@ from PySide6.QtWidgets import (
 
 from database import Database
 from report_generator import MotorsportReport
-from updater_client import LoginDialog, UpdateClient, UserSession
+from updater_client import LoginDialog, UpdateClient, UserSession, UserAdminDialog
 from cloud_sync import CloudSync
 from version import APP_VERSION
 from dialogs import (
@@ -4270,6 +4270,11 @@ class MainWindow(QMainWindow):
         )
         sidebar_layout.addWidget(update_button)
 
+        if self.user_session is not None and self.user_session.role == "admin":
+            users_button = QPushButton("👤 Benutzerverwaltung")
+            users_button.clicked.connect(self.open_user_admin)
+            sidebar_layout.addWidget(users_button)
+
         sidebar_layout.addStretch()
 
         root.addWidget(sidebar)
@@ -4294,6 +4299,12 @@ class MainWindow(QMainWindow):
                     manual=False,
                 ),
             )
+
+    def open_user_admin(self):
+        if self.user_session is None or self.user_session.role != "admin":
+            QMessageBox.warning(self, "Benutzerverwaltung", "Nur Administratoren dürfen Benutzer verwalten.")
+            return
+        UserAdminDialog(self.user_session, self).exec()
 
     def _load_expert_auth(self):
         try:
