@@ -20,19 +20,19 @@
     <div class="login-card">
       <div class="eyebrow">ANMELDUNG</div>
       <h1>Willkommen zurück</h1>
-      <p>Mit demselben Konto wie am PC anmelden.</p>
+      <p>Dasselbe Konto funktioniert am PC und am Handy.</p>
       <label>E-Mail
-        <input id="loginEmail" type="email" autocomplete="email" placeholder="name@team.de">
+        <input id="loginEmail" type="email" autocomplete="email" placeholder="E-Mail-Adresse">
       </label>
       <label>Passwort
         <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Passwort">
       </label>
       <div id="loginStatus" class="login-status"></div>
       <button id="loginBtn" class="primary big">ANMELDEN</button>
-      <button id="signupBtn" class="ghost full">Konto anlegen</button>
     </div>
   </div>
 </div>
+
 <div id="app" class="hidden">
   <header class="topbar">
     <div><div class="brand">SORG <span>GT</span></div><div class="subtitle">MOBILE</div></div>
@@ -44,7 +44,7 @@
       <div class="welcome">
         <div class="eyebrow">RENNBETRIEB</div>
         <h1>Schnell erfassen.</h1>
-        <p>Fahrzeug und Fahrer werden automatisch von der letzten Messung übernommen.</p>
+        <p>Die Daten kommen direkt aus derselben Cloud-Datenbank wie am PC.</p>
         <button class="primary big" data-go="measure">+ NEUE MESSUNG</button>
       </div>
 
@@ -64,40 +64,24 @@
     <section class="view" data-view="measure">
       <div class="section-head">
         <button class="backbtn" data-go="home">‹</button>
-        <div><div class="eyebrow">ERFASSUNG</div><h2>Neue Messung</h2></div>
+        <div><div class="eyebrow">ERFASSUNG</div><h2>Reifendruck</h2></div>
       </div>
 
       <form id="pressureForm">
         <div class="context-card">
-          <div class="context-top">
-            <div>
-              <div class="smalllabel">AKTUELLE AUSWAHL</div>
-              <div id="contextSummary" class="context-summary">Noch nichts ausgewählt</div>
-            </div>
-            <button id="toggleContext" class="ghost compact" type="button">Ändern</button>
-          </div>
-
-          <div id="contextFields" class="context-fields">
-            <label>Fahrzeug
-              <input id="car" list="carOptions" placeholder="Fahrzeug" required>
-              <datalist id="carOptions"></datalist>
-            </label>
-            <label>Fahrer
-              <input id="driver" list="driverOptions" placeholder="Fahrer" required>
-              <datalist id="driverOptions"></datalist>
-            </label>
-            <div class="two">
-              <label>Session
-                <select id="session"><option>Training</option><option>Qualifying</option><option>Rennen</option><option>Test</option></select>
-              </label>
-              <label>Reifensatz
-                <input id="setName" placeholder="z. B. Slick 2">
-              </label>
-            </div>
-          </div>
+          <label>Rennwochenende
+            <select id="eventSelect" required></select>
+          </label>
+          <label>Session
+            <select id="sessionSelect" required></select>
+          </label>
+          <label>Reifensatz
+            <select id="tyreSetSelect" required></select>
+          </label>
+          <div id="sessionSummary" class="context-summary"></div>
         </div>
 
-        <div class="pressure-title">REIFENDRUCK <span>bar</span></div>
+        <div class="pressure-title">HEISSDRUCK <span>bar</span></div>
         <div class="pressure-grid">
           <label class="pressure-box"><span>VL</span><small>Vorne links</small><input id="fl" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" required></label>
           <label class="pressure-box"><span>VR</span><small>Vorne rechts</small><input id="fr" inputmode="decimal" type="number" step="0.01" min="0" placeholder="0.00" required></label>
@@ -107,9 +91,10 @@
 
         <details class="note-details">
           <summary>+ Notiz hinzufügen</summary>
-          <textarea id="note" rows="3" placeholder="Temperatur, Zustand, Besonderheiten …"></textarea>
+          <textarea id="note" rows="3" placeholder="Besonderheiten …"></textarea>
         </details>
 
+        <div id="saveStatus" class="login-status"></div>
         <button class="primary big sticky-save" type="submit">MESSUNG SPEICHERN</button>
       </form>
     </section>
@@ -123,34 +108,21 @@
     </section>
 
     <section class="view" data-view="more">
-      <div class="section-head"><div><div class="eyebrow">MEHR</div><h2>Verwaltung</h2></div></div>
-
-      <details class="admin-card">
-        <summary>Fahrzeuge & Fahrer</summary>
+      <div class="section-head"><div><div class="eyebrow">MEHR</div><h2>System</h2></div></div>
+      <div class="admin-card open-card">
         <div class="admin-body">
-          <label>Fahrzeug hinzufügen<div class="row"><input id="newCar" placeholder="#77 BMW M4 GT4"><button id="addCar" class="smallbtn">+</button></div></label>
-          <div id="carList" class="chips"></div>
-          <label>Fahrer hinzufügen<div class="row"><input id="newDriver" placeholder="Name"><button id="addDriver" class="smallbtn">+</button></div></label>
-          <div id="driverList" class="chips"></div>
+          <div class="section-title">Cloud</div>
+          <p id="cloudInfo" class="muted">Verbindung wird geprüft …</p>
+          <button id="reloadBtn" class="ghost full">Jetzt synchronisieren</button>
         </div>
-      </details>
-
-      <details class="admin-card">
-        <summary>Installation</summary>
+      </div>
+      <div class="admin-card open-card">
         <div class="admin-body">
+          <div class="section-title">Installation</div>
           <p class="muted">iPhone: Safari → Teilen → „Zum Home-Bildschirm“. Android: „App installieren“.</p>
           <button id="installBtn" class="primary hidden">App installieren</button>
         </div>
-      </details>
-
-      <details class="admin-card">
-        <summary>Daten & Export</summary>
-        <div class="admin-body">
-          <button id="exportBtn" class="ghost full">Daten exportieren</button>
-          <p class="muted">Aktuell werden Daten nur auf diesem Gerät gespeichert. Die gemeinsame Cloud-Datenbank folgt noch.</p>
-          <button id="clearBtn" class="danger">Lokale Daten löschen</button>
-        </div>
-      </details>
+      </div>
     </section>
   </main>
 
@@ -160,6 +132,7 @@
     <button data-tab="more">•••<span>Mehr</span></button>
   </nav>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 </body>
