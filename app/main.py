@@ -4320,6 +4320,12 @@ class MainWindow(QMainWindow):
         self.refresh_all()
         if self.cloud_sync is not None and self.cloud_sync.enabled:
             QTimer.singleShot(1200, self.sync_cloud)
+            self.cloud_sync_timer = QTimer(self)
+            self.cloud_sync_timer.setInterval(10000)
+            self.cloud_sync_timer.timeout.connect(self.sync_cloud)
+            self.cloud_sync_timer.start()
+        else:
+            self.cloud_sync_timer = None
         if self.update_client is not None and self.user_session is not None:
             QTimer.singleShot(
                 1500,
