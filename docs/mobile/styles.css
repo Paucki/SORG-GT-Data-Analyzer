@@ -53,3 +53,11 @@ input,select,textarea{background:#0a0d11;border-color:#303842;color:#f7f8fa}.inp
 @media(max-width:390px){.welcome h1{font-size:32px}.home-track-card img{width:96px}.splash-track{height:300px}.track-car{display:none}}
 
 .admin-status-link{display:block;text-decoration:none;text-align:center;margin-top:10px;min-height:44px;line-height:22px}
+
+.settings-menu{margin:14px 0 2px}
+.settings-caption{color:#6f7984;font-size:9px;font-weight:900;letter-spacing:.16em;margin:0 4px 7px}
+.settings-row{display:flex;align-items:center;gap:12px;min-height:62px;padding:12px 14px;text-decoration:none;color:var(--text);background:linear-gradient(180deg,#141920,#0f1318);border:1px solid #29313a;border-radius:15px}
+.settings-row:active{background:#171d24}
+.settings-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#1a0f13;color:var(--red);font-size:13px;flex:0 0 auto}
+.settings-copy{min-width:0;flex:1}.settings-copy b{display:block;font-size:13px}.settings-copy small{display:block;color:var(--muted);font-size:10px;margin-top:3px;line-height:1.35}
+.settings-arrow{color:#68727d;font-size:26px;line-height:1}
