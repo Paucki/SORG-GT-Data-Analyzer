@@ -99,11 +99,25 @@ class CloudSync:
     def _upsert(self, table, records):
         if not records:
             return
+
+        # PostgreSQL/Supabase setzt created_at/updated_at selbst per Default.
+        # Lokale SQLite-Bestandsdaten haben updated_at häufig noch NULL.
+        # Ein explizites JSON-null überschreibt den DB-Default und verletzt
+        # die NOT-NULL-Constraints. Fehlende Zeitstempel daher nicht senden.
+        cleaned = []
+        for record in records:
+            item = dict(record)
+            if item.get("created_at") in (None, ""):
+                item.pop("created_at", None)
+            if item.get("updated_at") in (None, ""):
+                item.pop("updated_at", None)
+            cleaned.append(item)
+
         self._request(
             table,
             method="POST",
             query="on_conflict=id",
-            body=records,
+            body=cleaned,
             prefer="resolution=merge-duplicates,return=minimal",
         )
 
