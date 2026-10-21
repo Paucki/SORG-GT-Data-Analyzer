@@ -8,6 +8,7 @@ import os
 import secrets
 import subprocess
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -757,7 +758,16 @@ class UpdateClient:
         return tuple((parts + [0, 0, 0])[:3])
 
     def fetch_latest(self):
-        request = urllib.request.Request(LATEST_URL, headers={"User-Agent": "SORG-GT-Data-Analyzer"})
+        separator = "&" if "?" in LATEST_URL else "?"
+        url = f"{LATEST_URL}{separator}_={int(time.time())}"
+        request = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "SORG-GT-Data-Analyzer",
+                "Cache-Control": "no-cache, no-store, max-age=0",
+                "Pragma": "no-cache",
+            },
+        )
         with urllib.request.urlopen(request, timeout=8) as response:
             return json.loads(response.read().decode("utf-8-sig"))
 
