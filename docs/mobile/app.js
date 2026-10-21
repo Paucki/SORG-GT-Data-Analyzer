@@ -3,7 +3,7 @@ const SUPABASE_KEY='sb_publishable_r9xkC56K3zezl30297f1qQ_fsz6ztfl';
 const supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let teamId='',currentUser=null,currentRole='user';
-let cloud={tracks:[],vehicles:[],drivers:[],events:[],sessions:[],sets:[],measurements:[]};
+let cloud={tracks:[],vehicles:[],drivers:[],events:[],sessions:[],sets:[],measurements:[],changes:[],setupEntries:[],pressureSetups:[],tyreNotes:[],sessionMedia:[],pressureLog:[]};
 let recoveryMode=false;
 const startedAt=Date.now();
 
@@ -14,6 +14,7 @@ function go(name){
   $$('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
   if(name==='measure')populateMeasure();
   if(name==='setup')populateSetup();
+  if(name==='teamdata')renderTeamData();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 $$('[data-tab]').forEach(b=>b.onclick=()=>go(b.dataset.tab));
@@ -61,20 +62,32 @@ function render(){
 async function loadCloud(){
   if(!teamId)return;
   $('#cloudInfo').textContent='Synchronisierung läuft …';
-  const [tr,v,d,e,s,t,m]=await Promise.all([
+  const [tr,v,d,e,s,t,m,ch,se,ps,tn,sm,pl]=await Promise.all([
     supa.from('tracks').select('*').eq('team_id',teamId).order('name'),
     supa.from('vehicles').select('*').eq('team_id',teamId).order('name'),
     supa.from('drivers').select('*').eq('team_id',teamId).order('name'),
     supa.from('race_weekends').select('*').eq('team_id',teamId).order('start_date',{ascending:false}),
     supa.from('sessions').select('*').eq('team_id',teamId).order('measured_at',{ascending:false}),
     supa.from('tyre_sets').select('*').eq('team_id',teamId).order('set_number'),
-    supa.from('tyre_measurements').select('*').eq('team_id',teamId).order('updated_at',{ascending:false})
+    supa.from('tyre_measurements').select('*').eq('team_id',teamId).order('updated_at',{ascending:false}),
+    supa.from('session_changes').select('*').eq('team_id',teamId).order('created_at',{ascending:false}),
+    supa.from('session_setup_entries').select('*').eq('team_id',teamId).order('created_at',{ascending:false}),
+    supa.from('pressure_setups').select('*').eq('team_id',teamId).order('updated_at',{ascending:false}),
+    supa.from('tyre_notes').select('*').eq('team_id',teamId).order('note_time',{ascending:false}),
+    supa.from('session_media').select('*').eq('team_id',teamId).order('created_at',{ascending:false}),
+    supa.from('pressure_recommendation_log').select('*').eq('team_id',teamId).order('created_at',{ascending:false})
   ]);
-  const err=[tr,v,d,e,s,t,m].find(x=>x.error)?.error;
+  const err=[tr,v,d,e,s,t,m,ch,se,ps,tn,sm,pl].find(x=>x.error)?.error;
   if(err){$('#cloudInfo').textContent='Cloud-Fehler: '+err.message;return}
-  cloud={tracks:tr.data||[],vehicles:v.data||[],drivers:d.data||[],events:e.data||[],sessions:s.data||[],sets:t.data||[],measurements:m.data||[]};
+  cloud={
+    tracks:tr.data||[],vehicles:v.data||[],drivers:d.data||[],events:e.data||[],
+    sessions:s.data||[],sets:t.data||[],measurements:m.data||[],
+    changes:ch.data||[],setupEntries:se.data||[],pressureSetups:ps.data||[],
+    tyreNotes:tn.data||[],sessionMedia:sm.data||[],pressureLog:pl.data||[]
+  };
   render();
   if($('.view[data-view="setup"]')?.classList.contains('active'))populateSetup();
+  if($('.view[data-view="teamdata"]')?.classList.contains('active'))renderTeamData();
 }
 async function initAccount(session,reveal=true){
   currentUser=session?.user||null;
@@ -140,6 +153,25 @@ async function logout(){
   $('#app').classList.add('hidden');$('#loginScreen').classList.remove('hidden');$('#loginPassword').value='';
 }
 $('#logoutBtn').onclick=logout;$('#logoutFullBtn').onclick=logout;$('#reloadBtn').onclick=loadCloud;
+
+function renderSharedList(selector,rows,label){
+  const el=$(selector);if(!el)return;
+  el.innerHTML=rows.length?rows.map(x=>'<div class="shared-row">'+esc(label(x))+'</div>').join(''):'<div class="muted">Keine Daten vorhanden.</div>';
+}
+function renderTeamData(){
+  renderSharedList('#teamDrivers',cloud.drivers,x=>driverName(x.id));
+  renderSharedList('#teamVehicles',cloud.vehicles,x=>vehicleName(x.id)+(x.start_number?' · #'+x.start_number:''));
+  renderSharedList('#teamTracks',cloud.tracks,x=>x.name+(x.country?' · '+x.country:''));
+  renderSharedList('#teamSessions',cloud.sessions,x=>eventName(x.race_weekend_id)+' · '+sessionName(x));
+  renderSharedList('#teamChanges',cloud.changes,x=>(x.category||'Änderung')+' · '+(x.title||x.description||''));
+  renderSharedList('#teamSetupEntries',cloud.setupEntries,x=>(x.category||'Setup')+' · '+(x.parameter_name||'')+' → '+(x.new_value??''));
+  renderSharedList('#teamPressureSetups',cloud.pressureSetups,x=>{
+    const front=x.target_hot_front_bar??x.target_hot_vl??x.target_hot_vr;
+    const rear=x.target_hot_rear_bar??x.target_hot_hl??x.target_hot_hr;
+    return (x.name||'Zieldruck')+' · VA '+(front??'–')+' bar · HA '+(rear??'–')+' bar';
+  });
+  renderSharedList('#teamTyreNotes',cloud.tyreNotes,x=>(x.tyre_type||'Reifen')+' · '+(x.action||x.notes||'Notiz'));
+}
 
 function populateMeasure(){
   const ev=$('#eventSelect'),current=ev.value;
