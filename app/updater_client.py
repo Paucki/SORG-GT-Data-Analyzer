@@ -13,7 +13,9 @@ import urllib.request
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDialog,
+    QFrame,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -43,51 +45,191 @@ class LoginDialog(QDialog):
         super().__init__(parent)
         self.update_client = update_client
         self.user_session: UserSession | None = None
-        self.setWindowTitle("SORG GT Data Analyzer · Anmeldung")
+        self.setWindowTitle("SORG GT Data Analyzer")
         self.setModal(True)
-        self.resize(440, 300)
+        self.setFixedSize(520, 560)
+        self.setStyleSheet("""
+            QDialog {
+                background: #07090c;
+                color: #f5f7fa;
+            }
+            QFrame#loginCard {
+                background: #11151a;
+                border: 1px solid #2a3038;
+                border-radius: 18px;
+            }
+            QLabel#brand {
+                color: #ffffff;
+                font-size: 30px;
+                font-weight: 900;
+                letter-spacing: 2px;
+            }
+            QLabel#gt {
+                color: #e21b2d;
+                font-size: 13px;
+                font-weight: 900;
+                letter-spacing: 4px;
+            }
+            QLabel#headline {
+                color: #ffffff;
+                font-size: 20px;
+                font-weight: 800;
+            }
+            QLabel#subtle {
+                color: #929ba7;
+                font-size: 12px;
+            }
+            QLineEdit {
+                min-height: 46px;
+                padding: 0 14px;
+                color: #ffffff;
+                background: #090c10;
+                border: 1px solid #303640;
+                border-radius: 10px;
+                font-size: 14px;
+            }
+            QLineEdit:focus {
+                border: 1px solid #e21b2d;
+            }
+            QPushButton {
+                min-height: 44px;
+                border-radius: 10px;
+                font-weight: 800;
+                padding: 0 16px;
+            }
+            QPushButton#loginPrimary {
+                color: #ffffff;
+                background: #e21b2d;
+                border: 1px solid #e21b2d;
+            }
+            QPushButton#loginPrimary:hover {
+                background: #f0293a;
+            }
+            QPushButton#secondary {
+                color: #d8dde4;
+                background: #171b21;
+                border: 1px solid #303640;
+            }
+            QPushButton#passwordToggle {
+                color: #aab2bd;
+                background: transparent;
+                border: 0;
+                min-height: 28px;
+                padding: 0 4px;
+            }
+            QCheckBox {
+                color: #aeb6c2;
+                spacing: 8px;
+            }
+        """)
 
-        root = QVBoxLayout(self)
-        title = QLabel("SORG GT DATA ANALYZER")
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 22px; font-weight: 800; color: white; padding: 12px;")
-        root.addWidget(title)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(34, 28, 34, 28)
+        outer.setSpacing(0)
 
-        subtitle = QLabel("Bitte anmelden, um die Anwendung zu starten.")
+        brand = QLabel("SORG")
+        brand.setObjectName("brand")
+        brand.setAlignment(Qt.AlignCenter)
+        outer.addWidget(brand)
+
+        gt = QLabel("GT DATA ANALYZER")
+        gt.setObjectName("gt")
+        gt.setAlignment(Qt.AlignCenter)
+        outer.addWidget(gt)
+        outer.addSpacing(22)
+
+        card = QFrame()
+        card.setObjectName("loginCard")
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(28, 26, 28, 26)
+        card_layout.setSpacing(12)
+
+        headline = QLabel("Willkommen zurück")
+        headline.setObjectName("headline")
+        headline.setAlignment(Qt.AlignCenter)
+        card_layout.addWidget(headline)
+
+        subtitle = QLabel("Melde dich an und starte direkt ins Rennwochenende.")
+        subtitle.setObjectName("subtle")
         subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("color: #aeb6c2; margin-bottom: 12px;")
-        root.addWidget(subtitle)
+        subtitle.setWordWrap(True)
+        card_layout.addWidget(subtitle)
+        card_layout.addSpacing(10)
 
+        user_label = QLabel("Benutzername")
+        user_label.setObjectName("subtle")
+        card_layout.addWidget(user_label)
         self.username = QLineEdit()
-        self.username.setPlaceholderText("Benutzername")
+        self.username.setPlaceholderText("Benutzername eingeben")
+        self.username.setClearButtonEnabled(True)
+        card_layout.addWidget(self.username)
+
+        pass_row = QHBoxLayout()
+        pass_label = QLabel("Passwort")
+        pass_label.setObjectName("subtle")
+        self.show_password = QPushButton("Anzeigen")
+        self.show_password.setObjectName("passwordToggle")
+        self.show_password.setCheckable(True)
+        self.show_password.toggled.connect(
+            lambda checked: (
+                self.password.setEchoMode(QLineEdit.Normal if checked else QLineEdit.Password),
+                self.show_password.setText("Verbergen" if checked else "Anzeigen"),
+            )
+        )
+        pass_row.addWidget(pass_label)
+        pass_row.addStretch()
+        pass_row.addWidget(self.show_password)
+        card_layout.addLayout(pass_row)
+
         self.password = QLineEdit()
-        self.password.setPlaceholderText("Passwort")
+        self.password.setPlaceholderText("Passwort eingeben")
         self.password.setEchoMode(QLineEdit.Password)
         self.password.returnPressed.connect(self.try_login)
+        card_layout.addWidget(self.password)
 
-        form = QFormLayout()
-        form.addRow("Benutzername", self.username)
-        form.addRow("Passwort", self.password)
-        root.addLayout(form)
+        self.remember_user = QCheckBox("Benutzername auf diesem PC merken")
+        card_layout.addWidget(self.remember_user)
 
         self.status = QLabel("")
         self.status.setWordWrap(True)
-        self.status.setStyleSheet("color: #f59e0b;")
-        root.addWidget(self.status)
+        self.status.setAlignment(Qt.AlignCenter)
+        self.status.setStyleSheet("color: #f3a6ad; font-size: 12px; min-height: 22px;")
+        card_layout.addWidget(self.status)
 
-        buttons = QHBoxLayout()
-        self.setup_button = QPushButton("Ersten Benutzer anlegen")
-        self.setup_button.clicked.connect(self.create_first_user)
-        self.login_button = QPushButton("Anmelden")
+        self.login_button = QPushButton("ANMELDEN")
+        self.login_button.setObjectName("loginPrimary")
         self.login_button.setDefault(True)
         self.login_button.clicked.connect(self.try_login)
+        card_layout.addWidget(self.login_button)
+
+        self.setup_button = QPushButton("Ersten Benutzer anlegen")
+        self.setup_button.setObjectName("secondary")
+        self.setup_button.clicked.connect(self.create_first_user)
+        card_layout.addWidget(self.setup_button)
+
         cancel = QPushButton("Beenden")
+        cancel.setObjectName("passwordToggle")
         cancel.clicked.connect(self.reject)
-        buttons.addWidget(self.setup_button)
-        buttons.addStretch()
-        buttons.addWidget(cancel)
-        buttons.addWidget(self.login_button)
-        root.addLayout(buttons)
+        card_layout.addWidget(cancel)
+
+        outer.addWidget(card)
+        outer.addStretch()
+
+        footer = QLabel("SORG Rennsport · sichere lokale Anmeldung")
+        footer.setObjectName("subtle")
+        footer.setAlignment(Qt.AlignCenter)
+        outer.addWidget(footer)
+
+        try:
+            remembered = (self.update_client.data_folder / "remembered_user.txt")
+            if remembered.exists():
+                self.username.setText(remembered.read_text(encoding="utf-8").strip())
+                self.remember_user.setChecked(bool(self.username.text()))
+                self.password.setFocus()
+            else:
+                self.username.setFocus()
+        except Exception:
+            self.username.setFocus()
 
         self._refresh_mode()
 
@@ -97,14 +239,14 @@ class LoginDialog(QDialog):
 
     def _refresh_mode(self):
         if ACCOUNT_SERVER_URL:
-            self.status.setText("Online-Anmeldung aktiviert.")
+            self.status.setText("Online-Anmeldung aktiv")
             self.setup_button.setVisible(False)
             return
         if self.account_file.exists():
-            self.status.setText("Lokale Anmeldung.")
+            self.status.setText("")
             self.setup_button.setVisible(False)
         else:
-            self.status.setText("Noch kein lokaler Benutzer vorhanden. Lege zuerst einen Benutzer an.")
+            self.status.setText("Noch kein Benutzer vorhanden. Lege einmalig den ersten Benutzer an.")
             self.setup_button.setVisible(True)
 
     @staticmethod
@@ -201,6 +343,14 @@ class LoginDialog(QDialog):
             self.status.setText(str(error))
             self.login_button.setEnabled(True)
             return
+        try:
+            remember_path = self.update_client.data_folder / "remembered_user.txt"
+            if self.remember_user.isChecked():
+                remember_path.write_text(username, encoding="utf-8")
+            elif remember_path.exists():
+                remember_path.unlink()
+        except Exception:
+            pass
         self.user_session = session
         self.accept()
 
